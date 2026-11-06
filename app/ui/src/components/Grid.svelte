@@ -887,7 +887,7 @@
     font: 600 12px/var(--g-head) var(--nd-font-ui);
     color: var(--nd-ink);
     white-space: nowrap;
-    cursor: default;
+    cursor: var(--nd-cur-default, default);
     box-shadow: inset -1px 0 0 var(--nd-rule);
   }
   .th.num {
@@ -908,7 +908,7 @@
     right: -3px;
     width: 7px;
     height: 100%;
-    cursor: col-resize;
+    cursor: var(--nd-cur-col-resize, col-resize);
     z-index: 1;
   }
   .body {
@@ -936,10 +936,10 @@
     text-overflow: ellipsis;
     white-space: pre;
     box-shadow: inset -1px 0 0 color-mix(in srgb, var(--nd-rule) 55%, transparent);
-    cursor: cell;
+    cursor: var(--nd-cur-cell, cell);
   }
   .grid.dragging .td {
-    cursor: cell;
+    cursor: var(--nd-cur-cell, cell);
   }
   .td.num {
     text-align: right;
@@ -976,7 +976,7 @@
     background: var(--nd-raised);
     color: var(--nd-ink-2);
     box-shadow: 0 0 0 1px var(--nd-rule);
-    cursor: pointer;
+    cursor: var(--nd-cur-pointer, pointer);
     opacity: 0;
     transition: opacity 0.12s ease;
   }
@@ -1016,7 +1016,7 @@
     font-size: 11px;
     background: var(--nd-surface);
     box-shadow: inset -1px 0 0 var(--nd-rule);
-    cursor: default;
+    cursor: var(--nd-cur-default, default);
   }
   .tr.odd .gutter {
     background: color-mix(in srgb, var(--nd-ink) 2.2%, var(--nd-surface));
@@ -1027,10 +1027,10 @@
   }
   .corner {
     background: var(--nd-surface-2);
-    cursor: cell;
+    cursor: var(--nd-cur-cell, cell);
   }
   .th.sortable {
-    cursor: pointer;
+    cursor: var(--nd-cur-pointer, pointer);
   }
   .th-sort {
     font: 600 11px var(--nd-font-mono);

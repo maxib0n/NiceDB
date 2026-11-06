@@ -101,7 +101,7 @@
   height: var(--nd-kv-row);
   padding: 0 10px 0 calc(10px + var(--kv-depth, 0) * 16px);
   color: var(--nd-ink-2);
-  cursor: default;
+  cursor: var(--nd-cur-default, default);
   font-size: 12.5px;
   white-space: nowrap;
 }
@@ -397,7 +397,7 @@
   white-space: nowrap;
 }
 .kv-table tbody tr {
-  cursor: default;
+  cursor: var(--nd-cur-default, default);
 }
 .kv-table tr.picked td {
   background: var(--nd-sel);

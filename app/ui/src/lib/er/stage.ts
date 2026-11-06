@@ -1,6 +1,8 @@
 import { bounds, routeAll, routeNear, type ErTable, type Point, type Rect } from './model';
 import { coords, draw, sheet, drawMinimap, drawViewport, fitView, hitTable, miniFrame, NO_MARKS, type Look, type Marks, type MiniFrame, type Scene, type View } from './render';
 
+const cur = (name: string) => `var(--nd-cur-${name}, ${name})`;
+
 export interface StageEvents {
   select: (id: string | null) => void;
   open: (id: string) => void;
@@ -296,7 +298,7 @@ export class Stage {
     }
     if (e.button === 1 || (e.button === 0 && this.space)) {
       this.drag = { kind: 'pan', x: p.x, y: p.y, moved: false, deselect: false };
-      this.canvas.style.cursor = 'grabbing';
+      this.canvas.style.cursor = cur('grabbing');
       return;
     }
     if (e.button !== 0) return;
@@ -327,7 +329,7 @@ export class Stage {
     if (!d.moved && Math.hypot(dx, dy) < 3) return;
     d.moved = true;
     if (d.kind === 'pan') {
-      this.canvas.style.cursor = 'grabbing';
+      this.canvas.style.cursor = cur('grabbing');
       this.view = { ...this.view, x: this.view.x + dx, y: this.view.y + dy };
       d.x = p.x;
       d.y = p.y;
@@ -339,7 +341,7 @@ export class Stage {
     d.t.x = Math.round((d.ox + dx / this.view.k) / SNAP) * SNAP;
     d.t.y = Math.round((d.oy + dy / this.view.k) / SNAP) * SNAP;
     routeAll(scene.graph, new Set([d.t.id]));
-    this.canvas.style.cursor = 'move';
+    this.canvas.style.cursor = cur('move');
     this.miniDirty = true;
     this.invalidate();
   }
@@ -362,7 +364,7 @@ export class Stage {
   private hover(p: Point) {
     if (!this.scene) return;
     const t = hitTable(this.scene.graph, this.marks.hidden, this.world(p.x, p.y));
-    this.canvas.style.cursor = this.space ? 'grab' : t ? 'pointer' : '';
+    this.canvas.style.cursor = this.space ? cur('grab') : t ? cur('pointer') : '';
   }
 
   private dbl(e: MouseEvent) {
@@ -398,7 +400,7 @@ export class Stage {
     if (e.key === ' ') {
       e.preventDefault();
       this.space = down;
-      this.canvas.style.cursor = down ? 'grab' : '';
+      this.canvas.style.cursor = down ? cur('grab') : '';
       return;
     }
     if (!down || e.ctrlKey || e.metaKey || e.altKey) return;

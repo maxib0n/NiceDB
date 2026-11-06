@@ -30,7 +30,7 @@ input {
 }
 
 button {
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
 }
 
 [popover] {
@@ -42,7 +42,7 @@ button {
 }
 
 button:disabled {
-  cursor: not-allowed;
+  cursor: var(--nd-cur-not-allowed, not-allowed);
 }
 
 :focus-visible {

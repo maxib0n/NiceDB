@@ -3243,5 +3243,15 @@
   "window_minimize": "最小化",
   "window_maximize": "最大化",
   "window_restore": "还原",
-  "window_close": "关闭"
+  "window_close": "关闭",
+  "settings_pointers": "指针",
+  "settings_pointers_on": "随风格",
+  "settings_pointers_off": "系统",
+  "settings_pointer_size": "指针大小",
+  "settings_pointers_hint": "箭头、文本光标和调整手柄按当前风格的形状与配色绘制。系统开启高对比度或强制颜色时，仍使用系统指针。",
+  "pointers_offer_title": "随风格的指针",
+  "pointers_offer_body": "从此版本起，NiceDB 可以按你所用风格的形状与配色绘制鼠标指针。要开启吗？",
+  "pointers_offer_later": "之后可随时在 设置 › 外观 中更改。",
+  "pointers_offer_yes": "开启",
+  "pointers_offer_no": "暂不"
 }

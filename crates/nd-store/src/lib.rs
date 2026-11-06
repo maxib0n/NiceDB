@@ -29,8 +29,8 @@ pub use prefs::{
     NumberDisplay, Preferences, ResultsPrefs, SafetyPrefs, UnlockMode,
 };
 pub use settings::{
-    Appearance, ErLayout, Locale, Palette, SoundDetail, SoundTimbre, Style, TablePosition,
-    ThemeMode, UiScale, Volume,
+    Appearance, ErLayout, Locale, Palette, PointerScale, SoundDetail, SoundTimbre, Style,
+    TablePosition, ThemeMode, UiScale, Volume,
 };
 pub use transfer::{
     Applied, Conflict, ExportSelection, ImportChoice, ImportItem, ImportOutcome, ImportPreview,

@@ -183,7 +183,7 @@ function progressChannel(onProgress: (p: Progress) => void) {
   return channel as never;
 }
 
-export const defaultAppearance: Appearance = { style: 'listino', palette: '2', theme: 'dark', locale: 'it', ui_scale: 100, sounds: true, sound_volume: 30, sound_detail: 'all', sound_timbre: 'marimba', sound_gestures: false, jingle: true, setup_done: false };
+export const defaultAppearance: Appearance = { style: 'listino', palette: '2', theme: 'dark', locale: 'it', ui_scale: 100, sounds: true, sound_volume: 30, sound_detail: 'all', sound_timbre: 'marimba', sound_gestures: false, jingle: true, setup_done: false, pointers: true, pointers_asked: true, pointer_scale: 100 };
 
 export const inTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 

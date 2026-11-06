@@ -174,7 +174,7 @@ const PLAN_WORDS: Record<string, string> = {
   analisti: 'analysts', codice_fiscale: 'tax_code', telefono: 'phone', 'Fatture dell’anno': 'This year’s reductions',
   "SQL injection nella ricostruzione dell'argomento di EXTRACT": 'SQL injection when rebuilding the argument of EXTRACT',
 };
-const WORDS_RE = new RegExp(`(?<![\\w-])(${Object.keys(PLAN_WORDS).sort((x, y) => y.length - x.length).map((w) => w.replace(/-/g, '\\-')).join('|')})(?![\\w-])`, 'g');
+const WORDS_RE = new RegExp(`(?<![\\w-])(${Object.keys(PLAN_WORDS).sort((x, y) => y.length - x.length).map((w) => w.replace(/[.*+?^${}()|[\]\\-]/g, '\\$&')).join('|')})(?![\\w-])`, 'g');
 const COMPOUND = Object.keys(PLAN_WORDS).filter((w) => w.includes('_')).sort((x, y) => y.length - x.length);
 const ident = (id: string) => {
   if (PLAN_WORDS[id]) return PLAN_WORDS[id];

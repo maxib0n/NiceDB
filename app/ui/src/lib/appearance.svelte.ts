@@ -1,5 +1,6 @@
 import { overwriteGetLocale } from '../paraglide/runtime';
 import { api, defaultAppearance, type Appearance } from './api';
+import { applyPointers } from './pointer-theme';
 import { configureSound } from './sound';
 
 const voice = (a: Appearance) =>
@@ -10,6 +11,7 @@ export const PALETTES = ['1', '2', '3'] as const;
 export const THEMES = ['system', 'light', 'dark'] as const;
 export const LOCALES = ['it', 'en', 'zh-CN'] as const;
 export const SCALES = [90, 100, 110, 125, 150] as const;
+export const POINTER_SCALES = [100, 125, 150, 200] as const;
 
 const dark = typeof matchMedia === 'function' ? matchMedia('(prefers-color-scheme: dark)') : null;
 
@@ -27,6 +29,7 @@ export function applyToDocument(a: Appearance, systemDark: boolean, root: HTMLEl
   root.dataset.theme = resolvedTheme(a, systemDark);
   root.lang = a.locale;
   if (root !== document.documentElement) return;
+  applyPointers(a.pointers, a.pointer_scale);
   root.style.background = '';
   requestAnimationFrame(() => {
     try {

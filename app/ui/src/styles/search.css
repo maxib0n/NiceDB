@@ -69,7 +69,7 @@
   flex-basis: 100%;
 }
 .srch-sql summary {
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
   width: max-content;
 }
 .srch-sql .cmp-sql {
@@ -120,7 +120,7 @@
   background: none;
   color: var(--nd-ink);
   font: inherit;
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
 }
 .srch-toggle svg {
   color: var(--nd-ink-3);
@@ -152,7 +152,7 @@
   gap: 7px;
   height: 22px;
   padding: 0 8px;
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
 }
 .srch-col .mono {
   margin: 0;

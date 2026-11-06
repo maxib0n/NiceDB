@@ -232,7 +232,7 @@
   color: var(--nd-ink-2);
   text-decoration: line-through;
   text-decoration-color: var(--nd-error);
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
 }
 .dz-add-col {
   height: 24px;

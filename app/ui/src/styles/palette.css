@@ -27,7 +27,7 @@
   background: none;
   font: 500 12px/1 var(--nd-font-ui);
   color: var(--nd-ink-2);
-  cursor: default;
+  cursor: var(--nd-cur-default, default);
 }
 .pal-modes button:hover {
   color: var(--nd-ink);
@@ -105,7 +105,7 @@
   padding: 0 10px;
   border-radius: 4px;
   white-space: nowrap;
-  cursor: default;
+  cursor: var(--nd-cur-default, default);
   user-select: none;
   -webkit-user-select: none;
 }

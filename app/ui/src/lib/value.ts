@@ -37,9 +37,13 @@ const MAGIC: [RegExp, Magic][] = [
 ];
 
 const SVG: Magic = { mime: 'image/svg+xml', ext: 'svg', label: 'SVG', image: true };
-const SVG_HEAD = /^\s*(<\?xml[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*(<!DOCTYPE\s+svg[^>]*>\s*)?(<!--[\s\S]*?-->\s*)*<svg[\s>]/i;
+const PROLOGUE = /^\s*(?:<\?xml[^>]*>|<!--[\s\S]*?-->|<!DOCTYPE\s+svg[^>]*>)/i;
 
-export const isSvgText = (v: string) => SVG_HEAD.test(v.slice(0, 4096));
+export function isSvgText(v: string): boolean {
+  let s = v.slice(0, 4096);
+  for (let m = PROLOGUE.exec(s); m; m = PROLOGUE.exec(s)) s = s.slice(m[0].length);
+  return /^\s*<svg[\s>]/i.test(s);
+}
 
 function svgBytes(v: string): boolean {
   const head = v.slice(2, 2 + 1024).toLowerCase();

@@ -3243,5 +3243,15 @@
   "window_minimize": "Minimize",
   "window_maximize": "Maximize",
   "window_restore": "Restore",
-  "window_close": "Close"
+  "window_close": "Close",
+  "settings_pointers": "Pointers",
+  "settings_pointers_on": "In the style",
+  "settings_pointers_off": "System",
+  "settings_pointer_size": "Pointer size",
+  "settings_pointers_hint": "Arrow, text cursor and handles drawn in the shape and colours of the style. With high contrast or forced colours on, the system ones stay.",
+  "pointers_offer_title": "Pointers in the style",
+  "pointers_offer_body": "From this version NiceDB can draw the mouse pointer in the shape and colours of the style you use. Turn it on?",
+  "pointers_offer_later": "You can change it any time in Settings › Appearance.",
+  "pointers_offer_yes": "Turn on",
+  "pointers_offer_no": "Not now"
 }

@@ -183,7 +183,7 @@
   fill: var(--nd-ink-3);
 }
 .pg-node {
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
   outline: none;
 }
 .pg-box {

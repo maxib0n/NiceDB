@@ -43,4 +43,6 @@ jobs:
       - name: Clippy
         run: cargo clippy --locked --workspace --all-targets -- -D warnings
       - name: Licences
-        run: node scripts/licenses.mjs --check
+        run: |
+          cargo fetch --locked
+          node scripts/licenses.mjs --check

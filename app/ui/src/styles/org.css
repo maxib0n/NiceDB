@@ -208,7 +208,7 @@
 }
 body.tree-dragging,
 body.tree-dragging * {
-  cursor: grabbing !important;
+  cursor: var(--nd-cur-grabbing, grabbing) !important;
   user-select: none;
 }
 

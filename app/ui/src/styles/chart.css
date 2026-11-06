@@ -329,14 +329,14 @@
   background: none;
   color: var(--nd-ink);
   font: inherit;
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
 }
 .chart-scope-btn:hover:not(:disabled) {
   border-color: var(--nd-ink-3);
 }
 .chart-scope-btn:disabled {
   opacity: 0.6;
-  cursor: default;
+  cursor: var(--nd-cur-default, default);
 }
 .chart-scope-btn:focus-visible {
   outline: 2px solid var(--nd-focus);

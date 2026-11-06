@@ -50,10 +50,10 @@
   min-height: 24px;
   padding-top: 2px;
   padding-bottom: 2px;
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
 }
 .eng-opt[aria-disabled='true'] {
-  cursor: not-allowed;
+  cursor: var(--nd-cur-not-allowed, not-allowed);
 }
 .eng-opt[aria-disabled='true'] .eng-text {
   opacity: 0.55;

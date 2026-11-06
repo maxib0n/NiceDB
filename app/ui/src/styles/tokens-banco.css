@@ -1,4 +1,5 @@
 [data-style="banco"] {
+  --nd-pointer-shape: soft;
   
   --frame: #c7bfae;
   --frame-hi: #d6cfbf;

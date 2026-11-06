@@ -7,7 +7,7 @@
 
   const r = $derived(update.release);
   const notes = $derived(
-    (r ? (appearance.value.locale === 'en' ? r.notes.en : r.notes.it) : '')
+    (r ? (appearance.value.locale === 'it' ? r.notes.it : r.notes.en) : '')
       .split('\n')
       .map((l) => l.replace(/^\s*[-*•]\s*/, '').trim())
       .filter(Boolean),

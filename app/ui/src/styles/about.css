@@ -36,7 +36,7 @@
   border-radius: var(--nd-radius);
   background: none;
   color: var(--nd-ink-3);
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
   transition: color 0.15s;
 }
 .maker:hover,
@@ -272,7 +272,7 @@
   background: none;
   font: 400 12.5px/1.3 var(--nd-font-mono);
   color: var(--nd-accent-text);
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
   text-decoration: underline;
   text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
   text-underline-offset: 3px;
@@ -286,7 +286,7 @@
   display: flex;
   align-items: baseline;
   gap: 10px;
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
 }
 .about-own summary {
   color: var(--nd-ink-2);

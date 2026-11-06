@@ -167,7 +167,7 @@
   display: block;
   width: 170px;
   height: 108px;
-  cursor: crosshair;
+  cursor: var(--nd-cur-crosshair, crosshair);
 }
 .er-mini-cap {
   margin: 5px 0 0;
@@ -547,7 +547,7 @@
   display: flex;
   justify-content: space-between;
   border-top: 0;
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
   list-style: none;
 }
 [data-style='tavola'] .er-legend summary::-webkit-details-marker {

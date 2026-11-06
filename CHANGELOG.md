@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2 (2026-11-06)
+
+- Simplified Chinese interface, contributed by @YNM9000.
+- Pointers in the style: arrow, text cursor and handles drawn in each style's shape and colours, with a size setting. Existing installs are asked once; Settings › Appearance turns them off.
+- Switching an open connection to production locks it and shows the unlock control at once, without reopening.
+- Update notes in English for languages other than Italian.
+
 ## 0.2.1 (2026-11-05)
 
 - The status bar shows the right version.

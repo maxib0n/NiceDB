@@ -85,7 +85,7 @@
   height: var(--nd-doc-row);
   padding: 0 12px 0 8px;
   border-bottom: 1px solid color-mix(in srgb, var(--nd-rule) 55%, transparent);
-  cursor: default;
+  cursor: var(--nd-cur-default, default);
   font: 400 12px var(--nd-font-mono);
   white-space: nowrap;
 }

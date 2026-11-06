@@ -47,7 +47,7 @@
   text-align: left;
   white-space: nowrap;
   box-shadow: var(--nd-well-edge);
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
   transition: box-shadow 0.12s, background-color 0.12s;
 }
 .ndsel-value {
@@ -79,7 +79,7 @@
   box-shadow: var(--nd-well-edge-focus);
 }
 .ndsel:disabled {
-  cursor: not-allowed;
+  cursor: var(--nd-cur-not-allowed, not-allowed);
   opacity: 0.5;
 }
 
@@ -110,7 +110,7 @@
   padding: 3px 12px 3px 6px;
   border-radius: max(0px, calc(var(--nd-radius) - 1px));
   white-space: nowrap;
-  cursor: default;
+  cursor: var(--nd-cur-default, default);
 }
 .ndsel-opt.active {
   background: var(--nd-hover);
@@ -151,7 +151,7 @@ input[type='radio'] {
   background: var(--nd-well);
   color: var(--nd-mark);
   box-shadow: var(--nd-box-edge);
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
   transition: box-shadow 0.12s, background-color 0.12s;
 }
 input[type='radio'] {
@@ -192,7 +192,7 @@ input:is([type='checkbox'], [type='radio']):focus-visible {
   outline-offset: 2px;
 }
 input:is([type='checkbox'], [type='radio']):disabled {
-  cursor: not-allowed;
+  cursor: var(--nd-cur-not-allowed, not-allowed);
   opacity: 0.45;
 }
 
@@ -213,7 +213,7 @@ input[type='range'] {
   height: 18px;
   margin: 0;
   background: none;
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
 }
 input[type='range']::-webkit-slider-runnable-track {
   height: 4px;
@@ -232,7 +232,7 @@ input[type='range']::-webkit-slider-thumb {
   box-shadow: var(--nd-knob);
 }
 input[type='range']:disabled {
-  cursor: not-allowed;
+  cursor: var(--nd-cur-not-allowed, not-allowed);
 }
 input[type='range']:focus-visible {
   outline: 2px solid var(--nd-focus);

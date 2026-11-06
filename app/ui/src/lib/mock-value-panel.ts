@@ -29,7 +29,7 @@ function order(i: number) {
 
 function xml(i: number) {
   const o = order(i);
-  return `<?xml version="1.0" encoding="UTF-8"?><ordine numero="${o.numero}"><cliente id="${o.cliente.id}">${(o.cliente.ragione_sociale ?? '').replace('&', '&amp;')}</cliente><righe>${o.righe.map((r) => `<riga articolo="${r.articolo}" qta="${r.qta}">${r.descrizione}</riga>`).join('')}</righe><consegna vettore="${o.consegna.vettore}"/></ordine>`;
+  return `<?xml version="1.0" encoding="UTF-8"?><ordine numero="${o.numero}"><cliente id="${o.cliente.id}">${(o.cliente.ragione_sociale ?? '').replaceAll('&', '&amp;').replaceAll('<', '&lt;')}</cliente><righe>${o.righe.map((r) => `<riga articolo="${r.articolo}" qta="${r.qta}">${r.descrizione}</riga>`).join('')}</righe><consegna vettore="${o.consegna.vettore}"/></ordine>`;
 }
 
 const NOTE = [

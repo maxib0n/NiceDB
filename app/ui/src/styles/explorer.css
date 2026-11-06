@@ -34,7 +34,7 @@
   padding: 0 6px 0 calc(var(--depth, 0) * 12px);
   border-radius: 4px;
   white-space: nowrap;
-  cursor: default;
+  cursor: var(--nd-cur-default, default);
   user-select: none;
 }
 .ex-row:hover {

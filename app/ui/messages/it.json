@@ -3243,5 +3243,15 @@
   "window_minimize": "Riduci a icona",
   "window_maximize": "Ingrandisci",
   "window_restore": "Ripristina",
-  "window_close": "Chiudi"
+  "window_close": "Chiudi",
+  "settings_pointers": "Puntatori",
+  "settings_pointers_on": "Dello stile",
+  "settings_pointers_off": "Di sistema",
+  "settings_pointer_size": "Dimensione puntatori",
+  "settings_pointers_hint": "Freccia, cursore di testo e maniglie disegnati con la forma e i colori dello stile. Con il contrasto elevato o i colori forzati del sistema restano quelli di sistema.",
+  "pointers_offer_title": "Puntatori nello stile",
+  "pointers_offer_body": "Da questa versione NiceDB può disegnare il puntatore del mouse con la forma e i colori dello stile che usi. Vuoi attivarlo?",
+  "pointers_offer_later": "Puoi cambiarlo quando vuoi in Impostazioni › Aspetto.",
+  "pointers_offer_yes": "Attiva",
+  "pointers_offer_no": "Non ora"
 }

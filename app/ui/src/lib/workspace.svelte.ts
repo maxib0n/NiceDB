@@ -317,6 +317,18 @@ function sessionsOf(connectionId: string): SessionState[] {
   return [...(main ? [main] : []), ...Object.values(workspace.extra[connectionId] ?? {})];
 }
 
+$effect.root(() => {
+  $effect(() => {
+    for (const c of connections.list) {
+      for (const s of sessionsOf(c.id)) {
+        if (s.info.environment === c.environment) continue;
+        s.info.environment = c.environment;
+        void refreshAccess(s.info.session_id).catch(() => {});
+      }
+    }
+  });
+});
+
 const describeSession = (sessionId: string) => {
   const s = sessionById(sessionId);
   return { connection: profileName(s?.info.connection_id ?? ''), database: s?.database ?? '' };

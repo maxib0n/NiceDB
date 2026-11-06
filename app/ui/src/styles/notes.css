@@ -248,7 +248,7 @@
   text-decoration: underline;
   text-decoration-color: var(--nd-accent-text);
   text-underline-offset: 2px;
-  cursor: default;
+  cursor: var(--nd-cur-default, default);
 }
 .md del {
   color: var(--nd-ink-3);
@@ -282,7 +282,7 @@
 }
 .panel-row[aria-disabled='true'] {
   color: var(--nd-ink-3);
-  cursor: default;
+  cursor: var(--nd-cur-default, default);
 }
 .panel-list > li > .panel-row:hover,
 .panel-list:not(.nested) > li > button.panel-row {

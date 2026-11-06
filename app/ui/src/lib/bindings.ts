@@ -166,6 +166,9 @@ export type Appearance_Deserialize = {
 	sound_gestures?: boolean,
 	jingle?: boolean,
 	setup_done?: boolean,
+	pointers?: boolean,
+	pointers_asked?: boolean,
+	pointer_scale?: PointerScale,
 };
 
 export type Appearance_Serialize = {
@@ -181,6 +184,9 @@ export type Appearance_Serialize = {
 	sound_gestures: boolean,
 	jingle: boolean,
 	setup_done: boolean,
+	pointers: boolean,
+	pointers_asked: boolean,
+	pointer_scale: PointerScale,
 };
 
 export type ApplyOutcome = ApplyOutcome_Serialize | ApplyOutcome_Deserialize;
@@ -2651,6 +2657,8 @@ export type Plan_Serialize = {
 	worst_estimate: number | null,
 	raw: string,
 };
+
+export type PointerScale = number;
 
 export type Pooler = 
 "transaction" | 

@@ -1,4 +1,5 @@
 [data-style='listino'] {
+  --nd-pointer-shape: hard;
   --l-cond: 'Plex Cond', system-ui, sans-serif;
   --l-mono: 'Plex Mono', ui-monospace, monospace;
   --l-row: 20px;

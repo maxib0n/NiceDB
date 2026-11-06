@@ -10,7 +10,7 @@
   bottom: 0;
   z-index: 3;
   width: 7px;
-  cursor: col-resize;
+  cursor: var(--nd-cur-col-resize, col-resize);
   touch-action: none;
   outline: none;
 }
@@ -62,7 +62,7 @@
 
 :root.col-resizing,
 :root.col-resizing * {
-  cursor: col-resize !important;
+  cursor: var(--nd-cur-col-resize, col-resize) !important;
   user-select: none !important;
 }
 

@@ -74,7 +74,7 @@
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--nd-chrome-ink) 16%, transparent);
   color: var(--nd-chrome-ink-2);
   font: 400 12.5px/1 var(--nd-font-ui);
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
 }
 .pal-trigger svg {
   flex: none;

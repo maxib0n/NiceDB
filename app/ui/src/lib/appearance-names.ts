@@ -44,3 +44,9 @@ export function arrowPick<T>(e: KeyboardEvent, list: readonly T[], current: T, p
   const group = e.currentTarget as HTMLElement | null;
   queueMicrotask(() => group?.querySelector<HTMLElement>('[aria-checked="true"]')?.focus());
 }
+
+export const pointerChoices = () =>
+  [
+    { value: 'on', label: m.settings_pointers_on() },
+    { value: 'off', label: m.settings_pointers_off() },
+  ] as const;

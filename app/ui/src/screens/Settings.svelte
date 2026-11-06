@@ -20,8 +20,8 @@
   import SoundBoard from '../components/SoundBoard.svelte';
   import SoundVolume from '../components/SoundVolume.svelte';
   import StylePicker from '../components/StylePicker.svelte';
-  import { appearance, LOCALES, SCALES, THEMES, updateAppearance } from '../lib/appearance.svelte';
-  import { localeName, themeLabel } from '../lib/appearance-names';
+  import { appearance, LOCALES, POINTER_SCALES, SCALES, THEMES, updateAppearance } from '../lib/appearance.svelte';
+  import { localeName, pointerChoices, themeLabel } from '../lib/appearance-names';
   import type { Appearance } from '../lib/api';
   import { preview } from '../lib/sound';
   import { openWizard } from '../lib/wizard.svelte';
@@ -107,6 +107,17 @@
           <h3 class="caps">{m.settings_scale()}</h3>
           <Segmented label={m.settings_scale()} value={String(a.ui_scale)} options={SCALES.map((v) => ({ value: String(v), label: `${v}%` }))} onchange={(v) => set({ ui_scale: Number(v) })} />
         </div>
+        <div class="setting row">
+          <h3 class="caps">{m.settings_pointers()}</h3>
+          <Segmented label={m.settings_pointers()} value={a.pointers ? 'on' : 'off'} options={pointerChoices()} onchange={(v) => set({ pointers: v === 'on', pointers_asked: true })} />
+        </div>
+        {#if a.pointers}
+          <div class="setting row">
+            <h3 class="caps">{m.settings_pointer_size()}</h3>
+            <Segmented label={m.settings_pointer_size()} value={String(a.pointer_scale)} options={POINTER_SCALES.map((v) => ({ value: String(v), label: `${v}%` }))} onchange={(v) => set({ pointer_scale: Number(v) })} />
+          </div>
+        {/if}
+        <p class="hint sound-hint">{m.settings_pointers_hint()}</p>
       </div>
     {:else if nav.section === 'voice'}
       <header class="settings-head">

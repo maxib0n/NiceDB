@@ -104,10 +104,10 @@
   color: var(--nd-ink);
   text-align: left;
   font: inherit;
-  cursor: default;
+  cursor: var(--nd-cur-default, default);
 }
 .deps-go.follow {
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
 }
 .deps-go.follow:hover {
   background: color-mix(in srgb, var(--nd-ink) 5%, transparent);

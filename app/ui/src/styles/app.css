@@ -328,7 +328,7 @@ kbd {
   height: 7px;
   padding: 0;
   border: 0;
-  cursor: row-resize;
+  cursor: var(--nd-cur-row-resize, row-resize);
   background: linear-gradient(var(--nd-rule), var(--nd-rule)) center / 100% 1px no-repeat;
 }
 .splitter:hover,
@@ -594,7 +594,7 @@ kbd {
   align-items: center;
   gap: 8px;
   font-size: 13px;
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
 }
 .ssh {
   display: grid;

@@ -172,3 +172,8 @@
 [data-style='banco'][data-theme='dark'][data-palette='1'] {
   --nd-accent-text: var(--chestnut-hi);
 }
+
+[data-style] {
+  --nd-pointer: var(--nd-accent);
+  --nd-pointer-rim: var(--nd-accent-ink);
+}

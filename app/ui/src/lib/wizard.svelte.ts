@@ -11,5 +11,5 @@ export function openWizard() {
 
 export async function closeWizard() {
   wizard.reopened = false;
-  if (!appearance.value.setup_done) await updateAppearance({ setup_done: true }, { replaySplash: false });
+  if (!appearance.value.setup_done) await updateAppearance({ setup_done: true, pointers_asked: true }, { replaySplash: false });
 }

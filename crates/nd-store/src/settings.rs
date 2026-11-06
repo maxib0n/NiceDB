@@ -85,6 +85,36 @@ impl<'de> Deserialize<'de> for UiScale {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
 #[serde(transparent)]
 #[specta(transparent)]
+pub struct PointerScale(u16);
+
+impl PointerScale {
+    pub const STEPS: [u16; 4] = [100, 125, 150, 200];
+
+    pub fn new(percent: u16) -> Option<Self> {
+        Self::STEPS.contains(&percent).then_some(Self(percent))
+    }
+}
+
+impl Default for PointerScale {
+    fn default() -> Self {
+        Self(100)
+    }
+}
+
+impl<'de> Deserialize<'de> for PointerScale {
+    fn deserialize<D: Deserializer<'de>>(d: D) -> std::result::Result<Self, D::Error> {
+        let raw = serde_json::Value::deserialize(d)?;
+        Ok(raw
+            .as_u64()
+            .and_then(|v| u16::try_from(v).ok())
+            .and_then(Self::new)
+            .unwrap_or_default())
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
+#[serde(transparent)]
+#[specta(transparent)]
 pub struct Volume(u8);
 
 impl Volume {
@@ -148,6 +178,12 @@ pub struct Appearance {
     pub jingle: bool,
     #[serde(default = "already_set_up")]
     pub setup_done: bool,
+    #[serde(default)]
+    pub pointers: bool,
+    #[serde(default)]
+    pub pointers_asked: bool,
+    #[serde(default)]
+    pub pointer_scale: PointerScale,
 }
 
 fn already_set_up() -> bool {
@@ -169,6 +205,9 @@ impl Default for Appearance {
             sound_gestures: false,
             jingle: true,
             setup_done: false,
+            pointers: true,
+            pointers_asked: true,
+            pointer_scale: PointerScale::default(),
         }
     }
 }
@@ -198,8 +237,11 @@ impl Store {
         if let Some(saved) = self.get(APPEARANCE)? {
             return Ok(saved);
         }
+        let used = self.has_been_used()?;
         Ok(Appearance {
-            setup_done: self.has_been_used()?,
+            setup_done: used,
+            pointers: !used,
+            pointers_asked: !used,
             ..Appearance::default()
         })
     }

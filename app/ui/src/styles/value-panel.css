@@ -226,7 +226,7 @@
   padding: 0 6px 0 calc(6px + var(--d) * 14px);
   background: repeating-linear-gradient(to right, transparent 0 12px, var(--guide) 12px 13px, transparent 13px 14px) 6px 0 / calc(var(--d) * 14px) 100% no-repeat;
   white-space: nowrap;
-  cursor: default;
+  cursor: var(--nd-cur-default, default);
   outline: none;
 }
 .vj-row:hover {
@@ -253,7 +253,7 @@
   border-radius: 3px;
   background: none;
   color: var(--nd-ink-3);
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
 }
 .vj-tog:hover {
   color: var(--nd-ink);
@@ -310,7 +310,7 @@
   border-radius: 3px;
   background: none;
   color: var(--nd-ink-3);
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
   opacity: 0;
 }
 .vj-row:hover .vj-copy,
@@ -329,7 +329,7 @@
   background: none;
   color: var(--nd-accent-text);
   font: inherit;
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
 }
 .vj-more:hover {
   text-decoration: underline;
@@ -468,7 +468,7 @@
   min-height: 26px;
   padding: 4px 12px 4px 14px;
   border-bottom: 1px solid color-mix(in srgb, var(--nd-rule) 60%, transparent);
-  cursor: default;
+  cursor: var(--nd-cur-default, default);
 }
 .vp-field:hover {
   background: color-mix(in srgb, var(--nd-ink) 4%, transparent);
@@ -529,7 +529,7 @@
   color: inherit;
   font: inherit;
   font-variant-numeric: tabular-nums;
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
 }
 .status-agg .agg b {
   font-weight: 600;
@@ -555,13 +555,13 @@
   color: var(--nd-chrome-ink);
   font: inherit;
   white-space: nowrap;
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
 }
 .status-agg .agg-widen:hover:not(:disabled) {
   border-color: var(--nd-ink-3);
 }
 .status-agg .agg-widen:disabled {
-  cursor: default;
+  cursor: var(--nd-cur-default, default);
   opacity: 0.6;
 }
 .status-agg .agg-widen:focus-visible,

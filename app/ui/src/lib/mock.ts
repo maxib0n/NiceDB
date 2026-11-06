@@ -286,10 +286,14 @@ function readAppearance(): Appearance {
     sound_gestures: false,
     jingle: true,
     setup_done: true,
+    pointers: true,
+    pointers_asked: true,
+    pointer_scale: 100,
     ...(SHOWCASE ? {} : stored),
     ...(url as Partial<Appearance>),
     ...(scale ? { ui_scale: scale } : {}),
     ...(params().get('wizard') === '1' ? { setup_done: false } : {}),
+    ...(params().get('pointers') === 'ask' ? { pointers: false, pointers_asked: false } : params().get('pointers') === 'off' ? { pointers: false } : {}),
   };
   previewScale(a.ui_scale);
   return a;

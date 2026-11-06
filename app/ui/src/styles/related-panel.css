@@ -84,7 +84,7 @@
   color: var(--nd-ink);
   text-align: left;
   font: inherit;
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
 }
 .related-go:hover:not(:disabled) {
   background: color-mix(in srgb, var(--nd-ink) 5%, transparent);
@@ -94,7 +94,7 @@
   outline-offset: -2px;
 }
 .related-go:disabled {
-  cursor: default;
+  cursor: var(--nd-cur-default, default);
 }
 .related-name {
   overflow: hidden;
@@ -180,7 +180,7 @@
 }
 .fk-more {
   padding: 0 2px 0 4px;
-  cursor: default;
+  cursor: var(--nd-cur-default, default);
 }
 .fk-crumb {
   overflow: hidden;
@@ -193,7 +193,7 @@
   font: 500 13px var(--nd-font-ui);
   text-overflow: ellipsis;
   white-space: nowrap;
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
 }
 .fk-crumb:hover {
   background: color-mix(in srgb, var(--nd-ink) 6%, transparent);
@@ -259,7 +259,7 @@
   color: var(--nd-ink-3);
 }
 .fkp-row {
-  cursor: pointer;
+  cursor: var(--nd-cur-pointer, pointer);
 }
 .fkp-row span {
   overflow: hidden;

@@ -3,7 +3,7 @@
   import { Check, Plus } from '@lucide/svelte';
   import { onMount, tick } from 'svelte';
   import { appearance, LOCALES, SCALES, THEMES, updateAppearance } from '../lib/appearance.svelte';
-  import { localeName, paletteName, styleName, themeLabel } from '../lib/appearance-names';
+  import { localeName, paletteName, pointerChoices, styleName, themeLabel } from '../lib/appearance-names';
   import type { Appearance } from '../lib/api';
   import { refreshAll } from '../lib/guard.svelte';
   import { FONT_SIZES } from '../lib/prefs';
@@ -70,6 +70,7 @@
     [m.settings_palette(), paletteName(a.style, a.palette)],
     [m.settings_theme(), themeLabel[a.theme]()],
     [m.settings_scale(), `${a.ui_scale}%`],
+    [m.settings_pointers(), a.pointers ? m.settings_pointers_on() : m.settings_pointers_off()],
     [m.settings_sounds(), a.sounds ? m.wizard_sounds_at({ volume: a.sound_volume }) : m.settings_sounds_off()],
     [m.wizard_editor_font(), String(prefs.value.editor.font_size)],
     [m.settings_unlock_mode(), unlockText],
@@ -224,6 +225,10 @@
             <div class="setting row">
               <h3 class="caps">{m.settings_scale()}</h3>
               <Segmented label={m.settings_scale()} value={String(a.ui_scale)} options={SCALES.map((v) => ({ value: String(v), label: `${v}%` }))} onchange={(v) => look({ ui_scale: Number(v) })} />
+            </div>
+            <div class="setting row">
+              <h3 class="caps">{m.settings_pointers()}</h3>
+              <Segmented label={m.settings_pointers()} value={a.pointers ? 'on' : 'off'} options={pointerChoices()} onchange={(v) => look({ pointers: v === 'on', pointers_asked: true })} />
             </div>
             <div class="setting row">
               <h3 class="caps">{m.settings_sounds()}</h3>

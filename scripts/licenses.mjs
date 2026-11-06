@@ -61,7 +61,7 @@ function crates() {
     .map((id) => byId.get(id))
     .map((p) => {
       const dir = p.manifest_path.replace(/\/Cargo\.toml$/, "");
-      const holder = p.authors.map((a) => a.replace(/\s*<[^>]*>/, "")).join(", ");
+      const holder = p.authors.map((a) => a.replace(/\s*<[^>]*>/g, "")).join(", ");
       return withTexts({ source: "crate", name: p.name, version: p.version, license: normaliseLicence(p.license), url: p.repository ?? p.homepage ?? "", texts: licenceFiles(dir, p.license_file) }, holder);
     });
 }
@@ -72,7 +72,7 @@ function npm() {
   for (const group of Object.values(list)) {
     for (const p of group) {
       p.versions.forEach((version, i) => {
-        const holder = typeof p.author === "string" ? p.author.replace(/\s*<[^>]*>/, "") : "";
+        const holder = typeof p.author === "string" ? p.author.replace(/\s*<[^>]*>/g, "") : "";
         out.push(withTexts({ source: "npm", name: p.name, version, license: normaliseLicence(p.license), url: p.homepage ?? "", texts: licenceFiles(p.paths[i] ?? p.paths[0], null) }, holder));
       });
     }
