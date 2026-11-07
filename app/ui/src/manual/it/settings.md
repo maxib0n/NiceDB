@@ -61,9 +61,11 @@ Vedi [Editor e completamento](editor).
 | **Valori NULL** | `NULL`, `—`, **Vuoto** | `NULL` |
 | **Date** | **Come arrivano**, gg/mm/aaaa | Come arrivano |
 | **Numeri** | **Come arrivano**, **Con separatore delle migliaia** | Come arrivano |
+| **Dati personali** | **Visibili**, **Nascosti** | Visibili |
 
 - Oltre il tetto la lettura si ferma e il risultato è segnato come troncato. Il limite di righe di una connessione, se c'è, vale prima del tetto.
 - NULL, date e numeri cambiano solo come si vedono le celle: copia, esportazione e modifica usano il valore vero.
+- **Dati personali › Nascosti** copre con `••••••` le colonne che sembrano codici fiscali, IBAN, email o telefoni: vedi [Eseguire e leggere i risultati](results).
 
 ## Sicurezza
 - **Limite di tempo** per ogni ambiente (locale, sviluppo, staging, produzione): una query che lo supera viene annullata sul server.
@@ -72,6 +74,13 @@ Vedi [Editor e completamento](editor).
 - **Conferma prima di scrivere**: **Scrivere il nome**, **Finestra di conferma** o **Nessuna**.
 
 Cosa fa ogni scelta: [Sicurezza in produzione](production).
+
+## Modalità presentazione
+Per video, dimostrazioni e schermi condivisi: [[key:presentation]], oppure «Entra in modalità presentazione» in [[key:palette_commands]].
+- Tutto si ingrandisce del 20%.
+- Le colonne con dati personali (codici fiscali, IBAN, email, telefoni) mostrano `••••••`, anche con **Dati personali › Visibili**; l'occhio nell'intestazione le scopre una per una.
+- Nella finestra della connessione host, utente, URL, proxy e salti SSH appaiono come punti; le password lo sono già sempre.
+- **Presentazione** nella barra di stato ricorda che è attiva: un clic, o di nuovo [[key:presentation]], la spegne. Non resta salvata: alla riapertura NiceDB parte normale.
 
 ## Cambiare una scorciatoia
 1. **Impostazioni › Scorciatoie da tastiera**.

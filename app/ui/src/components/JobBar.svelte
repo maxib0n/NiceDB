@@ -5,7 +5,7 @@
   import type { Job } from '../lib/tools.svelte';
   import { m } from '../paraglide/messages';
 
-  let { job, label }: { job: Job; label: string } = $props();
+  let { job, label, written = (n) => m.tool_job_rows({ done: n }) }: { job: Job; label: string; written?: (count: string) => string } = $props();
 
   let now = $state(Date.now());
   $effect(() => {
@@ -29,7 +29,7 @@
         return p.total ? m.tool_job_rows_of({ done: num(done), total: num(p.total) }) : m.tool_job_rows({ done: num(done) });
     }
   });
-  const extra = $derived(p && p.unit !== 'rows' && (p.rows ?? 0) > 0 ? m.tool_job_rows({ done: num(p.rows ?? 0) }) : p && p.unit === 'tables' && (p.bytes ?? 0) > 0 ? bytes(p.bytes) : null);
+  const extra = $derived(p && p.unit !== 'rows' && (p.rows ?? 0) > 0 ? written(num(p.rows ?? 0)) : p && p.unit === 'tables' && (p.bytes ?? 0) > 0 ? bytes(p.bytes) : null);
 </script>
 
 <div class="job" role="status" aria-live="polite">

@@ -64,7 +64,13 @@ export interface PaletteAction {
 
 interface EditorLike {
   insertSnippet: (template: string) => void;
+  insertAtCursor: (sql: string) => void;
 }
+
+const insertAction = (sql: string): PaletteAction[] => {
+  const editor = paletteHost.editor;
+  return editor ? [{ id: 'insert', label: m.history_insert(), icon: ICON.newQuery, run: () => editor.insertAtCursor(sql) }] : [];
+};
 
 export const palette = $state({ open: false, mode: 'objects' as Mode, query: '', marks: [] as Mark[], recent: [] as string[], loaded: false, version: 0, asking: null as string | null });
 
@@ -473,6 +479,7 @@ function scriptActions(it: PaletteItem): PaletteAction[] {
   const usable = !!(s.connection_id ?? fallback);
   return [
     ...(usable ? [{ id: 'open', label: m.pal_open_script(), icon: ICON.scripts, run: () => openScript(s, fallback) }, { id: 'run', label: m.panel_scripts_run(), icon: ICON.run, run: () => openScript(s, fallback, true) }] : []),
+    ...insertAction(s.sql),
     { id: 'copy', label: m.pal_copy_sql(), icon: ICON.copy, run: () => copied(s.sql, s.name) },
   ];
 }
@@ -487,6 +494,7 @@ function queryActions(it: PaletteItem): PaletteAction[] {
   return [
     { id: 'open', label: m.tool_open_editor(), icon: ICON.scripts, run: () => open(false) },
     { id: 'run', label: m.panel_scripts_run(), icon: ICON.run, run: () => open(true) },
+    ...insertAction(sql),
     { id: 'copy', label: m.pal_copy_sql(), icon: ICON.copy, run: () => copied(sql, mk.label) },
   ];
 }

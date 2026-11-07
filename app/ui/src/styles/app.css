@@ -394,6 +394,15 @@ kbd {
 .results-error {
   color: var(--nd-error);
 }
+.results-tx {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: -6px 16px 0;
+  color: var(--nd-ink-2);
+  font-size: 12.5px;
+}
 .messages {
   height: 100%;
   margin: 0;
@@ -510,6 +519,15 @@ kbd {
   font: 400 11.5px/1.45 var(--nd-font-mono);
   white-space: pre-wrap;
   word-break: break-word;
+}
+.history-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.history-filters .seg button {
+  padding: 0 8px;
+  font-size: 11.5px;
 }
 .history-meta {
   font-size: 11px;

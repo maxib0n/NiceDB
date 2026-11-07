@@ -86,6 +86,15 @@ Run and Format work on the main cursor.
 
 While running, the current statement is highlighted; after an error, the spot the server points to is marked in the text.
 
+## SQL files
+- [[key:open_file]] opens a `.sql` (or `.txt`) file from disk in a new tab on the active connection, titled with the file name. If the file is already open, it goes to its tab.
+- [[key:save_file]] writes the tab to its file. A tab that did not come from a file asks where to save it.
+- [[key:save_file_as]], or right-click on the tab › **Save as…**, picks a new file.
+- **File** in the editor bar gathers the three actions: **Open SQL file…**, **Save file** (or "Save to "name"" for a tab that came from a file) and **Save as…**.
+- Dragging one or more `.sql` files onto the window opens them, each in a new tab on the active tab's connection; a file already open brings you to its tab. While you drag, a "Drop to open the SQL files" frame shows. Other files are left out and a notice names them.
+- The dialog starts in the last folder used. A tab with changes not written to its file shows the changes mark, and the tab's tooltip gives the path.
+- When NiceDB opens again the tab remembers its file and whether it had unsaved changes. Files up to 16 MB, in UTF-8.
+
 ## Editor settings
 In **Settings › Editor**: **Font size**, **Indent width**, **Autocomplete**, **Uppercase keywords when formatting**, **Underline unknown names**, **Error in a script**. See [Settings](settings).
 

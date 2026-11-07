@@ -10,7 +10,7 @@ export const HANA_READER_DEMO: ConnectionProfile[] = params().has('hanareader')
         name: 'Contabilità HANA — lettura',
         folder: null,
         environment: 'development',
-        color: null,
+        color: null, mark: null,
         session: DEFAULT_SESSION,
         template: { kind: 'none' },
         raw_fields: {},

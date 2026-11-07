@@ -41,10 +41,16 @@ A dry run executes a write inside a transaction, shows the rows it touches and w
 - For an `UPDATE` the new values come from rehearsing the statement in a savepoint that is rolled back right away: you see `now()`, defaults and columns changed by triggers. Where that is not possible (DuckDB, remote libSQL, tables without a primary key or on MyISAM) they are an estimate and the tab says so below the table.
 - `INSERT`s show the inserted rows on PostgreSQL, CockroachDB, SQLite, libSQL and DuckDB; on MySQL, MariaDB and SQL Server only the count.
 - If a statement fails, or you stop it with **Cancel**, the dry run rolls back by itself.
+- If you run something else while the dry run still waits for **Commit** or **Rollback**, the dry run is rolled back first and a notice above the results says so: the new run goes through the usual confirmations.
 - A dry run does not ask to confirm risky statements: you see the rows before committing.
 - On production, writes must already be unlocked for the dry run, because rows are really touched and locked until you close it; the connection name is asked at **Commit**.
 
-Transaction statements (`BEGIN`, `COMMIT`…), statements the engine refuses inside a transaction and, on MySQL and MariaDB, DDL cannot be dry-run. There must also be no transaction already open. In those cases the dry run does not start and the tab names the statement that blocks it.
+Transaction statements (`BEGIN`, `COMMIT`…), statements the engine refuses inside a transaction and, on MySQL and MariaDB, DDL cannot be dry-run. There must also be no transaction already open from the editor: then the message offers **Commit** and **Rollback** right where it appears, like the buttons at the top right. In the other cases the dry run does not start and the tab names the statement that blocks it.
+
+### What it would take away
+For `DELETE`, `TRUNCATE` and `DROP TABLE` the dry run opens with **What it would take away**: how many rows would go from that table and, for each table with a foreign key pointing at it, how many rows point at it and what happens to them: **deletes in cascade** (`ON DELETE CASCADE`), **clears the reference** (`SET NULL`) or **a reference that blocks the write** (`RESTRICT` or no action: the write would fail). The same lines appear in the confirmation of risky statements and of production, also for `TRUNCATE` and `DROP TABLE`, which a dry run cannot execute.
+
+The counts are reads made beforehand, within a few seconds: on huge tables they may say **rows not counted**. They follow one level of foreign keys, not the chains after it, and see only the foreign keys of the schema already loaded.
 
 ## Close with a transaction open
 Closing the last tab of a session, disconnecting, switching workspace or quitting while a transaction holds writes opens a dialog:

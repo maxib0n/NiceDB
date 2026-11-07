@@ -57,7 +57,7 @@ const ARCHIVED: ConnectionProfile = {
   name: 'Rossi Serramenti — vecchio',
   folder: 'f-archivio',
   environment: 'local',
-  color: null,
+  color: null, mark: null,
   target: { driver: 'sqlite', path: '/home/ada/archivio/rossi.sqlite', read_only: true },
   session: DEFAULT_SESSION, template: { kind: 'none' }, raw_fields: {},
 };
@@ -161,7 +161,7 @@ export function orgMock(demo: boolean, rich: boolean, list: () => ConnectionProf
       const replaced = items.filter((i) => i.conflict && i.kind !== 'settings' && pick(i.id) === 'replace').length;
       const report = items.find((i) => i.id === 'x-bassi-report');
       if (report && !list().some((c) => c.id === report.id)) {
-        set([...list(), { id: report.id, name: report.name, folder: 'f-bassi', environment: 'staging', color: null, target: { driver: 'postgres', host: 'report.bassi.lan', port: 5432, database: 'gestionale', user: 'report', tls: 'verify', ca_file: null, ssh: null, proxy: null, client_cert: null }, session: DEFAULT_SESSION, template: { kind: 'none' }, raw_fields: {} }]);
+        set([...list(), { id: report.id, name: report.name, folder: 'f-bassi', environment: 'staging', color: null, mark: null, target: { driver: 'postgres', host: 'report.bassi.lan', port: 5432, database: 'gestionale', user: 'report', tls: 'verify', ca_file: null, ssh: null, proxy: null, client_cert: null }, session: DEFAULT_SESSION, template: { kind: 'none' }, raw_fields: {} }]);
       }
       const added = items.filter((i) => i.kind !== 'settings' && !(i.conflict && pick(i.id) !== 'keep_both')).length;
       return { added, replaced, skipped, history: 214, settings: pick('settings') === 'replace', scripts: 5, snippets: 1, notes: 3, params: 18, profiles: 2, marks: 6 };

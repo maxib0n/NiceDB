@@ -1,4 +1,4 @@
-export type ActionId = 'run_statement' | 'run_script' | 'dry_run' | 'cancel' | 'format' | 'rename_alias' | 'save_script' | 'panel_notes' | 'panel_history' | 'new_tab' | 'palette' | 'palette_commands';
+export type ActionId = 'run_statement' | 'run_script' | 'dry_run' | 'cancel' | 'format' | 'rename_alias' | 'save_script' | 'panel_notes' | 'panel_history' | 'new_tab' | 'reopen_tab' | 'open_file' | 'save_file' | 'save_file_as' | 'palette' | 'palette_commands' | 'presentation';
 
 export interface ShortcutAction {
   id: ActionId;
@@ -17,8 +17,13 @@ export const ACTIONS: readonly ShortcutAction[] = [
   { id: 'panel_notes', area: 'app', combo: 'Alt+Mod+N' },
   { id: 'panel_history', area: 'app', combo: 'Alt+Mod+H' },
   { id: 'new_tab', area: 'app', combo: 'Alt+Mod+T' },
+  { id: 'reopen_tab', area: 'app', combo: 'Shift+Mod+T' },
+  { id: 'open_file', area: 'app', combo: 'Mod+O' },
+  { id: 'save_file', area: 'app', combo: 'Mod+S' },
+  { id: 'save_file_as', area: 'app', combo: 'Alt+Mod+S' },
   { id: 'palette', area: 'app', combo: 'Mod+K' },
   { id: 'palette_commands', area: 'app', combo: 'Shift+Mod+P' },
+  { id: 'presentation', area: 'app', combo: 'Alt+Mod+P' },
 ];
 
 export const FIXED: readonly { key: string; combo: string }[] = [

@@ -111,6 +111,26 @@
   margin-right: 3px;
   color: color-mix(in srgb, var(--org-tint, var(--nd-chrome-ink-2)) 85%, var(--nd-chrome-ink));
 }
+.conn-list .conn .conn-mark.own {
+  color: color-mix(in srgb, var(--org-tint, var(--nd-chrome-ink-2)) 85%, var(--nd-chrome-ink));
+}
+.tab-tint {
+  flex: none;
+  align-self: center;
+  width: 7px;
+  height: 7px;
+  margin-left: 9px;
+  margin-right: -3px;
+  border-radius: 50%;
+  background: var(--org-tint);
+}
+[data-style='listino'] .tab-tint,
+[data-style='banco'] .tab-tint {
+  border-radius: 0;
+}
+[data-style='listino'] .tab-tint {
+  margin-right: 3px;
+}
 .folder-name {
   font-weight: 600;
   font-size: 12.5px;

@@ -61,9 +61,11 @@ See [Editor and completion](editor).
 | **NULL values** | `NULL`, `—`, **Blank** | `NULL` |
 | **Dates** | **As received**, dd/mm/yyyy | As received |
 | **Numbers** | **As received**, **With thousands separator** | As received |
+| **Personal data** | **Shown**, **Hidden** | Shown |
 
 - Past the cap reading stops and the result is marked as truncated. A connection's own row limit, if set, applies before the cap.
 - NULL, dates and numbers only change how cells look: copy, export and editing use the real value.
+- **Personal data › Hidden** covers with `••••••` the columns that look like tax codes, IBANs, emails or phone numbers: see [Run and read results](results).
 
 ## Safety
 - **Time limit** for each environment (local, development, staging, production): a query that runs past it is cancelled on the server.
@@ -72,6 +74,13 @@ See [Editor and completion](editor).
 - **Confirm before writing**: **Type the name**, **Confirmation dialog** or **None**.
 
 What each choice does: [Production safety](production).
+
+## Presentation mode
+For videos, demos and shared screens: [[key:presentation]], or "Enter presentation mode" in [[key:palette_commands]].
+- Everything grows by 20%.
+- Columns holding personal data (tax codes, IBANs, emails, phone numbers) show `••••••`, even with **Personal data › Shown**; the eye in the header reveals them one at a time.
+- In the connection window host, user, URL, proxy and SSH hops show as dots; passwords always do.
+- **Presenting** in the status bar says it is on: a click, or [[key:presentation]] again, turns it off. It is not saved: NiceDB starts normally next time.
 
 ## Change a shortcut
 1. **Settings › Keyboard shortcuts**.

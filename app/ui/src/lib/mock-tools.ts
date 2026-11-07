@@ -158,7 +158,7 @@ export function toolsMock({ profile, access }: ToolsMockOptions) {
   return {
     ...rowsMock(profile, jobs),
     pickSave: async (name: string) => `/home/ada/Scrivania/${name}`,
-    pickOpen: async (extensions: string[]) => (extensions.includes('dump') ? '/home/ada/Backup/gestionale-2026-10-27.dump' : '/home/ada/Scaricati/clienti-nuovi.csv'),
+    pickOpen: async (extensions: string[]) => (extensions.includes('dump') ? '/home/ada/Backup/gestionale-2026-10-27.dump' : extensions.includes('ndjson') && !extensions.includes('csv') ? '/home/ada/Scaricati/clienti.ndjson' : '/home/ada/Scaricati/clienti-nuovi.csv'),
     pickFolder: async (purpose: 'clidriver' | 'tools' = 'tools') => (purpose === 'clidriver' ? '/opt/ibm/clidriver' : '/opt/postgresql/16/bin'),
     jobCancel: async (id: string) => jobs.get(id)?.(),
     toolDirSet: async () => {},
@@ -183,6 +183,32 @@ export function toolsMock({ profile, access }: ToolsMockOptions) {
       ];
       const stop = req.on_error === 'stop';
       return { inserted: cancelled || stop ? 0 : 18_398, skipped: stop ? 1 : 2, faults: stop ? faults.slice(0, 1) : faults, faults_cut: false, committed: !cancelled && !stop, cancelled, elapsed_ms: 1600 };
+    },
+    documentImportSample: async (path: string) => {
+      await sleep(120);
+      const doc = (i: number) => JSON.stringify({ _id: { $oid: `65f1a0c2e4b0a1b2c3d4e${String(i).padStart(3, '0')}` }, ragione_sociale: `Cliente ${i}`, provincia: i % 2 ? 'BG' : 'BS', dal: { $date: '2024-03-01T00:00:00Z' }, fido: { $numberLong: String(5000 + i * 100) } }, null, 2);
+      return {
+        layout: /\.json$/i.test(path) ? ('array' as const) : ('lines' as const),
+        count: 1240,
+        preview: Array.from({ length: 20 }, (_, i) => doc(i + 1)),
+        faults: [
+          { line: 87, message: 'key must be a string at line 1 column 2' },
+          { line: 412, message: 'not a JSON object' },
+        ],
+        faults_cut: false,
+      };
+    },
+    documentImport: async (req: { job_id: string; session_id: string; confirm?: string | null; on_error: 'stop' | 'skip' }, onProgress: (p: Progress) => void) => {
+      await admit(req.session_id, req.confirm);
+      const total = 812_000;
+      const cancelled = await tick(req.job_id, total, 'bytes', (p) => onProgress({ ...p, rows: Math.round(((p.done ?? 0) / total) * 1240) }));
+      const faults = [
+        { line: 87, message: 'key must be a string at line 1 column 2' },
+        { line: 412, message: 'not a JSON object' },
+        { line: 903, message: 'E11000 duplicate key error collection: gestionale.clienti index: _id_ dup key' },
+      ];
+      if (req.on_error === 'stop') return { inserted: 86, skipped: 1, faults: faults.slice(0, 1), faults_cut: false, stopped: true, cancelled, elapsed_ms: 140 };
+      return { inserted: cancelled ? 640 : 1237, skipped: 3, faults, faults_cut: false, stopped: false, cancelled, elapsed_ms: 1600 };
     },
     schemaCompare: async () => {
       await sleep(250);

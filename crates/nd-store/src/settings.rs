@@ -226,6 +226,7 @@ pub struct TablePosition {
 }
 
 const APPEARANCE: &str = "appearance";
+const SQL_FOLDER: &str = "sql_folder";
 const SECLAB_VERSIONS: &str = "seclab_versions";
 
 fn layout_key(connection_id: &str, database: &str) -> String {
@@ -265,6 +266,14 @@ impl Store {
 
     pub fn set_seclab_versions(&self, json: &str, signature: &str) -> Result<()> {
         self.put(SECLAB_VERSIONS, &(json, signature))
+    }
+
+    pub fn sql_folder(&self) -> Result<Option<String>> {
+        self.get(SQL_FOLDER)
+    }
+
+    pub fn set_sql_folder(&self, folder: &str) -> Result<()> {
+        self.put(SQL_FOLDER, &folder)
     }
 
     pub fn layout(&self, connection_id: &str, database: &str) -> Result<Option<ErLayout>> {

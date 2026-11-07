@@ -68,6 +68,7 @@ pub struct ResultsPrefs {
     pub dates: DateDisplay,
     pub numbers: NumberDisplay,
     pub monitor_ms: u32,
+    pub mask_sensitive: bool,
 }
 
 impl Default for ResultsPrefs {
@@ -78,6 +79,7 @@ impl Default for ResultsPrefs {
             dates: DateDisplay::default(),
             numbers: NumberDisplay::default(),
             monitor_ms: 5000,
+            mask_sensitive: false,
         }
     }
 }

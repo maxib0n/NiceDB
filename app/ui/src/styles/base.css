@@ -467,3 +467,42 @@ button:disabled {
   background: var(--nd-surface);
   color: var(--nd-ink);
 }
+
+html[data-presentation] {
+  zoom: 1.2;
+}
+[data-presentation] .shell {
+  height: calc(100vh / 1.2);
+}
+[data-presentation] .sheet-dialog {
+  max-height: calc(100vh / 1.2 - 64px);
+}
+[data-presentation] [data-private] {
+  -webkit-text-security: disc;
+}
+.status-present {
+  padding: 0 8px;
+  border: 0;
+  background: var(--nd-accent);
+  color: var(--nd-accent-ink);
+  font: 600 10.5px/1.6 var(--nd-font-ui);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: var(--nd-cur-pointer, pointer);
+}
+
+.file-drop {
+  position: fixed;
+  inset: 10px;
+  z-index: 50;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 10px;
+  border: 2px dashed var(--nd-focus);
+  border-radius: var(--nd-radius);
+  background: color-mix(in srgb, var(--nd-surface) 82%, transparent);
+  color: var(--nd-ink);
+  font: 600 14px var(--nd-font-ui);
+  pointer-events: none;
+}

@@ -24,7 +24,7 @@ export const ORACLE_DEMO: ConnectionProfile[] = params().has('oracle')
         name: 'Gestionale Oracle',
         folder: null,
         environment: params().get('oracle') === 'prod' ? 'production' : 'development',
-        color: null,
+        color: null, mark: null,
         session: DEFAULT_SESSION,
         template: { kind: 'none' },
         raw_fields: {},

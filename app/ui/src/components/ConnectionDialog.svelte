@@ -153,6 +153,7 @@
       folder: f.folder || null,
       environment: f.environment,
       color: initial?.color ?? null,
+      mark: initial?.mark ?? null,
       target,
       session,
       template: f.role === 'model' ? { kind: 'model' } : { kind: 'none' },
@@ -385,7 +386,7 @@
     <div class="form-row host">
       <label class="form-field" class:invalid={bad('proxy') && !f.proxyHost.trim()}>
         <span class="caps">{m.form_proxy_host()}</span>
-        <span class="field"><input bind:value={f.proxyHost} placeholder={m.form_ph_proxy_host()} spellcheck="false" autocomplete="off" /></span>
+        <span class="field"><input data-private bind:value={f.proxyHost} placeholder={m.form_ph_proxy_host()} spellcheck="false" autocomplete="off" /></span>
         <VarHint text={f.proxyHost} {preview} />
       </label>
       <label class="form-field" class:invalid={bad('proxy') && !portOk(f.proxyPort)}>
@@ -397,7 +398,7 @@
     <div class="form-row two">
       <label class="form-field">
         <span class="caps">{m.form_proxy_user()}</span>
-        <span class="field"><input bind:value={f.proxyUser} placeholder={m.form_proxy_user_hint()} spellcheck="false" autocomplete="off" /></span>
+        <span class="field"><input data-private bind:value={f.proxyUser} placeholder={m.form_proxy_user_hint()} spellcheck="false" autocomplete="off" /></span>
         <VarHint text={f.proxyUser} {preview} />
       </label>
       <label class="form-field">
@@ -535,7 +536,7 @@
         {:else if shape === 'remote'}
           <label class="form-field" class:invalid={bad('url')}>
             <span class="caps-line"><span class="caps">{m.form_url()}</span><OwnMark own={mine('url')} onreset={() => reset('url')} /></span>
-            <span class="field"><input bind:value={f.url} placeholder={m.form_ph_libsql_url()} autocomplete="off" spellcheck="false" /></span>
+            <span class="field"><input data-private bind:value={f.url} placeholder={m.form_ph_libsql_url()} autocomplete="off" spellcheck="false" /></span>
             <VarHint text={f.url} {preview} />
           </label>
           <label class="form-field">
@@ -566,7 +567,7 @@
           <div class="form-row two">
             <label class="form-field">
               <span class="caps-line"><span class="caps">{m.form_user()}</span><OwnMark own={mine('user')} onreset={() => reset('user')} /></span>
-              <span class="field"><input bind:value={f.user} autocomplete="off" spellcheck="false" /></span>
+              <span class="field"><input data-private bind:value={f.user} autocomplete="off" spellcheck="false" /></span>
               <VarHint text={f.user} {preview} />
             </label>
             <label class="form-field">
@@ -597,7 +598,7 @@
             </label>
             <label class="form-field">
               <span class="caps-line"><span class="caps">{m.ddb_access_key()}</span><OwnMark own={mine('user')} onreset={() => reset('user')} /></span>
-              <span class="field"><input bind:value={f.user} placeholder={m.form_ph_access_key()} disabled={!!f.awsProfile.trim()} autocomplete="off" spellcheck="false" /></span>
+              <span class="field"><input data-private bind:value={f.user} placeholder={m.form_ph_access_key()} disabled={!!f.awsProfile.trim()} autocomplete="off" spellcheck="false" /></span>
               <VarHint text={f.user} {preview} />
             </label>
             <label class="form-field">
@@ -633,7 +634,7 @@
           <div class="form-row host">
             <label class="form-field" class:invalid={bad('host')}>
               <span class="caps-line"><span class="caps">{f.driver === 'redis' && f.redisMode === 'sentinel' ? m.redis_sentinels() : f.driver === 'cassandra' ? m.cql_hosts() : m.form_host()}</span><OwnMark own={mine('host')} onreset={() => reset('host')} /></span>
-              <span class="field"><input bind:value={f.host} placeholder={preset?.host ?? ''} autocomplete="off" spellcheck="false" /></span>
+              <span class="field"><input data-private bind:value={f.host} placeholder={preset?.host ?? ''} autocomplete="off" spellcheck="false" /></span>
               <VarHint text={f.host} {preview} />
             </label>
             {#if !(f.driver === 'mongodb' && f.srv)}
@@ -679,7 +680,7 @@
             {/if}
             <label class="form-field" class:invalid={bad('user')}>
               <span class="caps-line"><span class="caps">{m.form_user()}</span><OwnMark own={mine('user')} onreset={() => reset('user')} /></span>
-              <span class="field"><input bind:value={f.user} placeholder={f.driver === 'redis' ? m.form_ph_redis_user() : (preset?.user ?? '')} autocomplete="off" spellcheck="false" /></span>
+              <span class="field"><input data-private bind:value={f.user} placeholder={f.driver === 'redis' ? m.form_ph_redis_user() : (preset?.user ?? '')} autocomplete="off" spellcheck="false" /></span>
               <VarHint text={f.user} {preview} />
             </label>
             <label class="form-field">

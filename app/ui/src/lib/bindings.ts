@@ -34,9 +34,17 @@ export const commands = {
 	explain: (request: ExplainRequest_Deserialize) => typedError<PlanReport_Serialize, CoreError_Serialize>(__TAURI_INVOKE("explain", { request })),
 	paramsFound: (text: string, dialect: Dialect, scope: RunScope) => typedError<ParamsFound, CoreError_Serialize>(__TAURI_INVOKE("params_found", { text, dialect, scope })),
 	runCancel: (runId: string) => typedError<null, CoreError_Serialize>(__TAURI_INVOKE("run_cancel", { runId })),
-	historyList: (connectionId: string | null, query: string, limit: number) => typedError<HistoryEntry_Serialize[], CoreError_Serialize>(__TAURI_INVOKE("history_list", { connectionId, query, limit })),
+	historyList: (connectionId: string | null, query: string, outcome: HistoryOutcome, limit: number) => typedError<HistoryEntry_Serialize[], CoreError_Serialize>(__TAURI_INVOKE("history_list", { connectionId, query, outcome, limit })),
+	planHistory: (connectionId: string, database: string, sql: string) => typedError<SavedPlan_Serialize[], CoreError_Serialize>(__TAURI_INVOKE("plan_history", { connectionId, database, sql })),
+	planSaved: (id: number) => typedError<string | null, CoreError_Serialize>(__TAURI_INVOKE("plan_saved", { id })),
+	writeRemovals: (sessionId: string, text: string, scope: RunScope) => typedError<Removing_Serialize[], CoreError_Serialize>(__TAURI_INVOKE("write_removals", { sessionId, text, scope })),
+	writeLinked: (sessionId: string, text: string, scope: RunScope, index: number, links: Referencing[]) => typedError<(number | null)[], CoreError_Serialize>(__TAURI_INVOKE("write_linked", { sessionId, text, scope, index, links })),
 	exportSave: (name: string, data: string) => typedError<boolean, CoreError_Serialize>(__TAURI_INVOKE("export_save", { name, data })),
 	fileLoad: () => typedError<LoadedFile | null, CoreError_Serialize>(__TAURI_INVOKE("file_load")),
+	sqlFileOpen: () => typedError<SqlFile | null, CoreError_Serialize>(__TAURI_INVOKE("sql_file_open")),
+	sqlFileRead: (path: string) => typedError<SqlFile, CoreError_Serialize>(__TAURI_INVOKE("sql_file_read", { path })),
+	sqlFileSave: (path: string | null, name: string, text: string) => typedError<SqlFile | null, CoreError_Serialize>(__TAURI_INVOKE("sql_file_save", { path, name, text })),
+	sensitiveColumns: (columns: ColumnSample[]) => __TAURI_INVOKE<(string | null)[]>("sensitive_columns", { columns }),
 	reportPdf: (name: string, report: PdfReport_Deserialize) => typedError<boolean, CoreError_Serialize>(__TAURI_INVOKE("report_pdf", { name, report })),
 	dataBrowse: (sessionId: string, browse: Browse_Deserialize) => typedError<Page_Serialize, CoreError_Serialize>(__TAURI_INVOKE("data_browse", { sessionId, browse })),
 	dataPick: (sessionId: string, browse: Browse_Deserialize, jobId: string) => typedError<Page_Serialize, CoreError_Serialize>(__TAURI_INVOKE("data_pick", { sessionId, browse, jobId })),
@@ -90,6 +98,8 @@ export const commands = {
 	dataExport: (request: DataExport_Deserialize, events: Channel<Progress_Deserialize>) => typedError<DataExported, CoreError_Serialize>(__TAURI_INVOKE("data_export", { request, events })),
 	dataImportSample: (sessionId: string, source: DataImportSource_Deserialize) => typedError<DataImportSample, CoreError_Serialize>(__TAURI_INVOKE("data_import_sample", { sessionId, source })),
 	dataImport: (request: DataImport_Deserialize, events: Channel<Progress_Deserialize>) => typedError<DataImported, CoreError_Serialize>(__TAURI_INVOKE("data_import", { request, events })),
+	documentImportSample: (path: string) => typedError<DocumentSample, CoreError_Serialize>(__TAURI_INVOKE("document_import_sample", { path })),
+	documentImport: (request: DocumentImport_Deserialize, events: Channel<Progress_Deserialize>) => typedError<DocumentsImported, CoreError_Serialize>(__TAURI_INVOKE("document_import", { request, events })),
 	jobCancel: (jobId: string) => typedError<null, CoreError_Serialize>(__TAURI_INVOKE("job_cancel", { jobId })),
 	schemaCompare: (request: CompareRequest) => typedError<Comparison_Serialize, CoreError_Serialize>(__TAURI_INVOKE("schema_compare", { request })),
 	tableDesign: (sessionId: string, namespace: string, name: string) => typedError<TableDesign_Serialize, CoreError_Serialize>(__TAURI_INVOKE("table_design", { sessionId, namespace, name })),
@@ -210,6 +220,7 @@ export type AuditEntry_Deserialize = {
 	sql: string,
 	rows?: number | null,
 	error?: string | null,
+	undo?: ChangeSet_Deserialize | null,
 };
 
 export type AuditEntry_Serialize = {
@@ -221,6 +232,7 @@ export type AuditEntry_Serialize = {
 	sql: string,
 	rows: number | null,
 	error: string | null,
+	undo: ChangeSet_Serialize | null,
 };
 
 export type AutoKind = 
@@ -544,6 +556,11 @@ export type ColumnPlan_Serialize = {
 	only_b: Column_Serialize[],
 };
 
+export type ColumnSample = {
+	name: string,
+	values: string[],
+};
+
 export type ColumnType = {
 	name: string,
 	type_name: string,
@@ -617,7 +634,8 @@ export type ConnectionProfile_Deserialize = {
 	name: string,
 	folder?: string | null,
 	environment: Environment,
-	color?: string | null,
+	color?: FolderTint | null,
+	mark?: FolderMark | null,
 	target: Target_Deserialize,
 	session?: SessionOptions_Deserialize,
 	template?: Template,
@@ -629,7 +647,8 @@ export type ConnectionProfile_Serialize = {
 	name: string,
 	folder: string | null,
 	environment: Environment,
-	color: string | null,
+	color: FolderTint | null,
+	mark: FolderMark | null,
 	target: Target_Serialize,
 	session: SessionOptions_Serialize,
 	template: Template,
@@ -996,7 +1015,52 @@ export type Dist = { kind: "uniform" } |
 { kind: "high" } | 
 { kind: "sequential"; step: number | null };
 
+export type DocLayout = 
+"array" | 
+"lines" | 
+"stream";
+
+export type DocumentImport = DocumentImport_Serialize | DocumentImport_Deserialize;
+
+export type DocumentImport_Deserialize = {
+	job_id: string,
+	session_id: string,
+	path: string,
+	database: string,
+	collection: string,
+	on_error: OnRowError,
+	confirm?: string | null,
+};
+
+export type DocumentImport_Serialize = {
+	job_id: string,
+	session_id: string,
+	path: string,
+	database: string,
+	collection: string,
+	on_error: OnRowError,
+	confirm: string | null,
+};
+
+export type DocumentSample = {
+	layout: DocLayout,
+	count: number | null,
+	preview: string[],
+	faults: RowFault[],
+	faults_cut: boolean,
+};
+
 export type DocumentWrite = { kind: "insert"; database: string; collection: string; documents: string[] } | { kind: "replace"; database: string; collection: string; id: string; document: string } | { kind: "delete"; database: string; collection: string; ids: string[] };
+
+export type DocumentsImported = {
+	inserted: number | null,
+	skipped: number | null,
+	faults: RowFault[],
+	faults_cut: boolean,
+	stopped: boolean,
+	cancelled: boolean,
+	elapsed_ms: number | null,
+};
 
 export type DriverError = DriverError_Serialize | DriverError_Deserialize;
 
@@ -1300,7 +1364,7 @@ export type Flavor = "timescale" | "neon" | "supabase" | "yugabyte" | "tidb" | "
 
 export type Folder = Folder_Serialize | Folder_Deserialize;
 
-export type FolderMark = "star" | "briefcase" | "building" | "flask" | "server" | "shield";
+export type FolderMark = "star" | "briefcase" | "building" | "flask" | "server" | "shield" | "database" | "cloud" | "house" | "user" | "flag" | "bug" | "chart" | "globe";
 
 export type FolderTint = "ochre" | "red" | "green" | "blue" | "violet" | "slate";
 
@@ -1641,6 +1705,8 @@ export type HistoryEntry_Serialize = {
 	rows: number | null,
 	error: string | null,
 };
+
+export type HistoryOutcome = "any" | "ok" | "failed";
 
 export type HypertableSize = HypertableSize_Serialize | HypertableSize_Deserialize;
 
@@ -2882,6 +2948,13 @@ export type RedisTarget_Serialize = {
 	mode: RedisMode,
 };
 
+export type Referencing = {
+	namespace: string,
+	table: string,
+	columns: string[],
+	ref_columns: string[],
+};
+
 export type Relation = Relation_Serialize | Relation_Deserialize;
 
 export type RelationTag = { kind: "hypertable"; chunks: number; compressed: number } | { kind: "continuous_aggregate" } | 
@@ -2903,6 +2976,26 @@ export type Relation_Serialize = {
 	foreign_keys: ForeignKey[],
 	estimated_rows: number | null,
 	detail?: string,
+};
+
+export type RemovalKind = "delete" | "truncate" | "drop";
+
+export type Removing = Removing_Serialize | Removing_Deserialize;
+
+export type Removing_Deserialize = {
+	index: number,
+	kind: RemovalKind,
+	namespace: string,
+	name: string,
+	rows?: number | null,
+};
+
+export type Removing_Serialize = {
+	index: number,
+	kind: RemovalKind,
+	namespace: string,
+	name: string,
+	rows: number | null,
 };
 
 export type Report = {
@@ -2948,6 +3041,7 @@ export type ResultsPrefs_Deserialize = {
 	dates?: DateDisplay,
 	numbers?: NumberDisplay,
 	monitor_ms?: number,
+	mask_sensitive?: boolean,
 };
 
 export type ResultsPrefs_Serialize = {
@@ -2956,6 +3050,7 @@ export type ResultsPrefs_Serialize = {
 	dates: DateDisplay,
 	numbers: NumberDisplay,
 	monitor_ms: number,
+	mask_sensitive: boolean,
 };
 
 export type Risk = "update_without_where" | "delete_without_where" | "drop" | "truncate" | "alter" | 
@@ -3148,6 +3243,7 @@ row_limit?: number | null } | { type: "failed"; index: number; elapsed_ms: numbe
 { type: "preview"; index: number; preview: RowPreview_Deserialize } | 
 { type: "implicit_commit"; index: number } | 
 { type: "transaction_lost" } | 
+{ type: "dry_run_dropped" } | 
 { type: "transaction"; state: TxState_Deserialize } | { type: "finished"; elapsed_ms: number | null; cancelled: boolean };
 
 export type RunEvent_Serialize = { type: "statement"; index: number; from: number; to: number; sql: string; unsortable: Unsortable | null } | { type: "columns"; index: number; columns: Column_Serialize[] } | { type: "rows"; index: number; rows: ((string | null)[])[] } | 
@@ -3160,6 +3256,7 @@ row_limit: number | null } | { type: "failed"; index: number; elapsed_ms: number
 { type: "preview"; index: number; preview: RowPreview_Serialize } | 
 { type: "implicit_commit"; index: number } | 
 { type: "transaction_lost" } | 
+{ type: "dry_run_dropped" } | 
 { type: "transaction"; state: TxState_Serialize } | { type: "finished"; elapsed_ms: number | null; cancelled: boolean };
 
 export type RunRequest = RunRequest_Serialize | RunRequest_Deserialize;
@@ -3237,11 +3334,34 @@ export type SavedDesign_Serialize = {
 	draft: string | null,
 };
 
+export type SavedFile = {
+	path: string,
+	dirty: boolean,
+};
+
 export type SavedNote = {
 	scope: NoteScope,
 	scope_id: string,
 	body: string,
 	updated_at: number | null,
+};
+
+export type SavedPlan = SavedPlan_Serialize | SavedPlan_Deserialize;
+
+export type SavedPlan_Deserialize = {
+	id: number | null,
+	at: number | null,
+	analyzed: boolean,
+	total?: number | null,
+	shape_changed: boolean,
+};
+
+export type SavedPlan_Serialize = {
+	id: number | null,
+	at: number | null,
+	analyzed: boolean,
+	total: number | null,
+	shape_changed: boolean,
 };
 
 export type SavedTab = SavedTab_Serialize | SavedTab_Deserialize;
@@ -3256,6 +3376,7 @@ export type SavedTab_Deserialize = {
 	params?: ParamValue[],
 	design?: SavedDesign_Deserialize | null,
 	trail?: string | null,
+	file?: SavedFile | null,
 };
 
 export type SavedTab_Serialize = {
@@ -3268,6 +3389,7 @@ export type SavedTab_Serialize = {
 	params?: ParamValue[],
 	design?: SavedDesign_Serialize,
 	trail?: string,
+	file?: SavedFile,
 };
 
 export type SavedTable = {
@@ -3665,6 +3787,12 @@ export type Spill_Deserialize = {
 export type Spill_Serialize = {
 	kind: SpillKind,
 	kb: number | null,
+};
+
+export type SqlFile = {
+	path: string,
+	name: string,
+	text: string,
 };
 
 export type SqliteTarget = {

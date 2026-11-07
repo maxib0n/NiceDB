@@ -1,4 +1,6 @@
+import { ApiError } from './api';
 import type { Api, Appearance, ConnectionProfile, HistoryEntry, RunEvent, RunRequest, Schema, Secrets, Visibility } from './api';
+import type { SqlFile } from './bindings';
 import { erApi, erSchema } from './mock-er';
 import { withObjects } from './mock-explorer';
 import { dataMock } from './mock-data';
@@ -61,7 +63,7 @@ const DEMO: ConnectionProfile[] = [
     name: 'Bassi — produzione',
     folder: 'f-bassi',
     environment: 'production',
-    color: null,
+    color: null, mark: null,
     session: DEFAULT_SESSION, template: { kind: 'none' }, raw_fields: {},
     target: { driver: 'postgres', host: 'db.bassi.lan', port: 5432, database: 'gestionale', user: 'lettura', tls: 'verify', ca_file: null, ssh: { host: 'bastion.bassi.it', port: 22, user: 'ada', auth: { method: 'agent' }, jumps: [] }, proxy: null, client_cert: null },
   },
@@ -70,7 +72,7 @@ const DEMO: ConnectionProfile[] = [
     name: 'Bassi — staging',
     folder: 'f-bassi',
     environment: 'staging',
-    color: null,
+    color: null, mark: null,
     session: DEFAULT_SESSION, template: { kind: 'none' }, raw_fields: {},
     target: { driver: 'postgres', host: 'staging.bassi.lan', port: 5432, database: 'gestionale', user: 'ada', tls: 'verify', ca_file: null, ssh: null, proxy: null, client_cert: null },
   },
@@ -79,7 +81,7 @@ const DEMO: ConnectionProfile[] = [
     name: 'Bassi — locale',
     folder: 'f-bassi',
     environment: 'local',
-    color: null,
+    color: null, mark: null,
     session: DEFAULT_SESSION, template: { kind: 'none' }, raw_fields: {},
     target: { driver: 'sqlite', path: '/home/ada/dati/bassi.sqlite', read_only: false },
   },
@@ -88,7 +90,7 @@ const DEMO: ConnectionProfile[] = [
     name: 'Studio Marini — gestionale',
     folder: 'f-marini',
     environment: 'development',
-    color: null,
+    color: null, mark: null,
     session: DEFAULT_SESSION, template: { kind: 'none' }, raw_fields: {},
     target: { driver: 'postgres', host: '127.0.0.1', port: 55432, database: 'gestionale', user: 'nicedb', tls: 'disable', ca_file: null, ssh: null, proxy: null, client_cert: null },
     ...(params().has('limit') ? { session: { ...DEFAULT_SESSION, init: "SET search_path TO vendite, public;\nSET TIME ZONE 'Europe/Rome';", keepalive_secs: 120, row_limit: 1000 } } : {}),
@@ -140,6 +142,14 @@ const TABLES: Record<string, Gen> = SHOWCASE ? SHOWCASE_TABLES : {
 };
 
 const sessions = sessionMock((sid) => connections.find((c) => `mock-${c.id}` === sid.split('@')[0]));
+
+const QUERY_ONLY: Record<string, Gen> = {
+  contatti: {
+    columns: [['id', 'int4'], ['nome', 'text'], ['email', 'text'], ['telefono', 'text'], ['iban', 'text'], ['note', 'text']],
+    total: 40,
+    row: (i) => [String(i), `Contatto ${i}`, `contatto${i}@example.it`, `+39 035 ${String(100000 + i * 37)}`, 'IT60X0542811101000000123456', i % 3 ? null : 'richiamare'],
+  },
+};
 
 const { guardRun, ...data } = dataMock(TABLES, (sid) => connections.find((c) => `mock-${c.id}` === sid.split('@')[0]));
 const prm = paramsMock(params().has('demo'));
@@ -217,6 +227,9 @@ async function run(req: RunRequest, emit: (e: RunEvent) => void) {
   running.set(req.run_id, () => (cancelled = true));
   const started = performance.now();
   const statements = pick(req);
+  const connection_id = req.session_id.replace(/^mock-/, '').replace(/@.*$/, '');
+  const remember = (sql: string, t: number, rows: number | null, error: string | null) =>
+    history.unshift({ id: history.length + 1, connection_id, sql, started_at: Date.now(), elapsed_ms: Math.round(performance.now() - t), rows, error });
   for (const [index, st] of statements.entries()) {
     if (cancelled) break;
     emit({ type: 'statement', index, from: st.from, to: st.to, sql: st.sql, unsortable: null });
@@ -235,15 +248,18 @@ async function run(req: RunRequest, emit: (e: RunEvent) => void) {
         position: { line, column },
         at,
       });
+      remember(st.sql, t, null, 'la colonna «città» non esiste');
       if (req.continue_on_error) continue;
       break;
     }
-    const table = Object.keys(TABLES).find((name) => new RegExp(`\\bfrom\\s+${name}\\b`, 'i').test(st.sql));
-    const gen = table ? TABLES[table] : undefined;
+    const all = { ...QUERY_ONLY, ...TABLES };
+    const table = Object.keys(all).find((name) => new RegExp(`\\bfrom\\s+${name}\\b`, 'i').test(st.sql));
+    const gen = table ? all[table] : undefined;
     if (!gen) {
       emit({ type: 'columns', index, columns: [{ name: '?column?', type_name: 'int4' }] });
       emit({ type: 'rows', index, rows: [['1']] });
       emit({ type: 'done', index, elapsed_ms: 1, row_count: 1, rows_affected: null, command: 'SELECT', truncated: false, row_limit: null });
+      remember(st.sql, t, 1, null);
       continue;
     }
     const limit = Number(/\blimit\s+(\d+)/i.exec(st.sql)?.[1] ?? gen.total);
@@ -258,7 +274,7 @@ async function run(req: RunRequest, emit: (e: RunEvent) => void) {
     }
     if (cancelled) break;
     emit({ type: 'done', index, elapsed_ms: Math.round(performance.now() - t), row_count: sent, rows_affected: null, command: 'SELECT', truncated: false, row_limit: null });
-    history.unshift({ id: history.length + 1, connection_id: req.session_id, sql: st.sql, started_at: Date.now(), elapsed_ms: Math.round(performance.now() - t), rows: sent, error: null });
+    remember(st.sql, t, sent, null);
   }
   running.delete(req.run_id);
   emit({ type: 'finished', elapsed_ms: Math.round(performance.now() - started), cancelled });
@@ -347,7 +363,8 @@ export const mock: Api = {
     const database = db ?? (target.driver === 'redis' ? mockServer(target).database : MAIN_DB);
     const session_id = db ? `mock-${id}@${db}` : `mock-${id}`;
     sessionDb.set(session_id, database);
-    return { session_id, connection_id: id, environment: p?.environment ?? 'local', dialect: dialectOf(target.driver), caps: capsOf(target.driver), server: { ...mockServer(target), database }, transaction_lost: false, edition: null };
+    const file = target.driver === 'sqlite' || target.driver === 'duckdb' || target.driver === 'libsql';
+    return { session_id, connection_id: id, environment: p?.environment ?? 'local', dialect: dialectOf(target.driver), caps: capsOf(target.driver), server: { ...mockServer(target), database: file && !db ? mockServer(target).database : database }, transaction_lost: false, edition: null };
   },
   sessionReconnect: async (sid) => {
     await sleep(80);
@@ -357,6 +374,8 @@ export const mock: Api = {
   sessionWatch: sessions.sessionWatch,
   sessionSwitch: async (sid, database) => {
     const id = sid.split('@')[0]?.slice(5) ?? '';
+    const driver = connections.find((c) => c.id === id)?.target.driver;
+    if (driver === 'sqlite' || driver === 'duckdb' || driver === 'libsql') throw new ApiError({ code: 'single_database' });
     return mock.sessionOpen(id, database);
   },
   visibilityGet: async (id) => structuredClone(visibility.get(id) ?? { databases: {}, schemas: {} }),
@@ -381,6 +400,32 @@ export const mock: Api = {
   },
   searchPath: async () => null,
   fileLoad: async () => null,
+  writeRemovals: async (_sid, text) =>
+    text
+      .split(';')
+      .map((st, index) => ({ index, m: /^\s*(?:(delete)\s+from|(truncate)(?:\s+table)?|(drop)\s+table(?:\s+if\s+exists)?)\s+([\w.]+)(\s+where\s+.+)?/is.exec(st) }))
+      .flatMap(({ index, m }) => {
+        if (!m) return [];
+        const [ns, name] = (m[4] ?? '').includes('.') ? (m[4] ?? '').split('.') : ['', m[4] ?? ''];
+        const kind = m[1] ? ('delete' as const) : m[2] ? ('truncate' as const) : ('drop' as const);
+        return [{ index, kind, namespace: ns ?? '', name: name ?? '', rows: m[5] ? 3 : (TABLES[name ?? '']?.total ?? 0) }];
+      }),
+  writeLinked: async (_sid, _text, _scope, _index, links) => links.map((_, i) => [7, 0, 2][i % 3] ?? 0),
+  sensitiveColumns: async (cols) => cols.map((c) => (/e?mail|pec/i.test(c.name) ? 'email' : /iban/i.test(c.name) ? 'iban' : /telefono|phone|cell/i.test(c.name) ? 'phone' : /codice_?fiscale|^cf$/i.test(c.name) ? 'cf' : null)),
+  sqlFileOpen: async () => (window as unknown as { __ndSqlFile?: SqlFile | null }).__ndSqlFile ?? { path: '/home/demo/report.sql', name: 'report.sql', text: 'SELECT provincia, COUNT(*) AS clienti\nFROM clienti\nGROUP BY provincia;\n' },
+  sqlFileRead: async (path) => {
+    const name = path.split('/').pop() ?? path;
+    return { path, name, text: `-- ${name}\nSELECT count(*) FROM clienti;\n` };
+  },
+  listenFileDrop: async (handler) => {
+    (window as unknown as { __ndDrop?: typeof handler }).__ndDrop = handler;
+    return () => {};
+  },
+  sqlFileSave: async (path, name, text) => {
+    const at = path ?? `/home/demo/${/\.(sql|txt)$/i.test(name) ? name : `${name}.sql`}`;
+    ((window as unknown as { __ndSqlSaved?: { path: string; text: string }[] }).__ndSqlSaved ??= []).push({ path: at, text });
+    return { path: at, name: at.split('/').pop() ?? at, text };
+  },
   clickhouseAccess: async () => ({ profiles: [], policies: [] }),
   objectDdl: async (sid, object) => {
     await sleep(90);
@@ -415,7 +460,8 @@ export const mock: Api = {
     if (mongoCancel(id)) return;
     running.get(id)?.();
   },
-  historyList: async (_c, q, limit) => history.filter((h) => h.sql.toLowerCase().includes(q.toLowerCase())).slice(0, limit),
+  historyList: async (c, q, outcome, limit) =>
+    history.filter((h) => (!c || h.connection_id === c) && (outcome === 'any' || (outcome === 'failed') === !!h.error) && h.sql.toLowerCase().includes(q.toLowerCase())).slice(0, limit),
   ...erApi,
   ...planMock(running, (sid) => enginePlan(connections.find((c) => `mock-${c.id}` === sid.split('@')[0])?.target.driver), SHOWCASE ? showcasePlan : undefined),
   ...orgMock(params().has('demo'), params().has('org'), () => connections, (next) => (connections = next)),

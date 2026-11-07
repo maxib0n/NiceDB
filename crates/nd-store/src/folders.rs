@@ -23,6 +23,14 @@ pub enum FolderMark {
     Flask,
     Server,
     Shield,
+    Database,
+    Cloud,
+    House,
+    User,
+    Flag,
+    Bug,
+    Chart,
+    Globe,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
@@ -45,6 +53,12 @@ pub enum TreeNode {
 pub(crate) fn enum_str<T: Serialize>(v: Option<T>) -> Option<String> {
     v.and_then(|v| serde_json::to_value(v).ok())
         .and_then(|v| v.as_str().map(str::to_owned))
+}
+
+pub(crate) fn lenient<'de, D: serde::Deserializer<'de>, T: DeserializeOwned>(
+    d: D,
+) -> std::result::Result<Option<T>, D::Error> {
+    Ok(Option::<serde_json::Value>::deserialize(d)?.and_then(|v| serde_json::from_value(v).ok()))
 }
 
 pub(crate) fn enum_parse<T: DeserializeOwned>(s: Option<String>) -> Option<T> {

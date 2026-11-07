@@ -47,6 +47,22 @@ Accanto alle schede: il numero di righe e il tempo, **Valore**, **Copia** ed **E
 | [[Ctrl+A]] o clic sull'angolo | seleziona tutto |
 | [[Esc]] | lascia solo la cella attiva |
 | bordo destro dell'intestazione | trascinato allarga la colonna; doppio clic la adatta al contenuto |
+| intestazione trascinata | sposta la colonna; una linea mostra dove andrà |
+| [[Shift]] + intestazione trascinata | seleziona più colonne |
+
+## Cercare nella griglia
+Con la griglia a fuoco, [[Ctrl+F]] apre **Cerca nei risultati** in alto a destra. Mentre scrivi, le celle che contengono il testo (maiuscole o minuscole non contano) si colorano e la prima diventa la cella attiva; il contatore dice a quale sei. [[Invio]] e [[Shift+Invio]], o [[F3]] e [[Shift+F3]], passano alla successiva e alla precedente; [[Esc]] chiude e torna alla griglia. Cerca solo nelle righe già caricate, fino a 100 000 celle trovate, e nel valore com'è nel database (non nel formato a schermo di date e numeri).
+
+## Dati personali nascosti
+Con **Impostazioni › Risultati › Dati personali › Nascosti** (spento di serie), le colonne che sembrano codici fiscali, IBAN, email o telefoni mostrano `••••••`. Si riconoscono come nel Laboratorio sicurezza: dal nome della colonna, confermato da almeno uno dei primi valori. L'occhio nell'intestazione, o il tasto destro › **Mostra i valori**, le scopre per quel risultato; **Nascondi i valori** le copre di nuovo. Serve per lo schermo condiviso: copia, esportazione, pannello valore e modifica usano il valore vero, e Ctrl+F non cerca nelle colonne nascoste.
+
+## Colonne
+Tasto destro su un'intestazione:
+- **Blocca a sinistra** tiene la colonna ferma mentre scorri in orizzontale, per esempio la chiave primaria; se ne bloccano più d'una. **Sblocca la colonna** la rimette dopo quelle bloccate.
+- **Adatta larghezza** e **Adatta tutte le colonne** misurano i valori caricati.
+- **Ripristina ordine e larghezze** torna all'ordine della query.
+
+Ordine, colonne bloccate e larghezze scelte a mano si ricordano per tabella, su questo computer: valgono nella vista **Dati** e nei risultati delle query su quella tabella, per nome di colonna.
 
 [[Shift+Invio]] apre il pannello valore della cella: [Pannello valore e grafici](value). Il tasto destro su una cella offre copia, ordinamento, selezione e **Confronta con…**.
 
@@ -76,8 +92,11 @@ Se la connessione cade durante una query, sopra i risultati compare un avviso. L
 ## Cronologia
 **Cronologia** nella barra della query, o [[key:panel_history]], apre l'elenco delle query eseguite su questa connessione, con data, tempo e righe. Le query fallite sono segnate.
 - **Cerca nella cronologia** filtra per testo.
+- **Connessioni**: **Questa** mostra solo la connessione della scheda, **Tutte** quelle di ogni connessione, con il nome davanti alla data.
+- **Esito**: **Tutte**, **Riuscite** o **Con errore**.
+- Con il pannello aperto, ogni esecuzione che finisce compare da sola, rispettando ricerca e filtri.
 - Un clic inserisce la query in fondo all'editor.
-- Tasto destro: **Inserisci nell'editor**, **Apri in una nuova scheda**, **Copia**.
+- Tasto destro: **Inserisci nell'editor**, **Apri in una nuova scheda** (sulla connessione dove era stata eseguita), **Copia**.
 
 ## Limiti
 - La griglia dei risultati è in sola lettura: per modificare le righe si usa la vista **Dati** ([Vista Dati e modifiche](data)).

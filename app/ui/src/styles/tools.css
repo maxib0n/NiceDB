@@ -1571,3 +1571,45 @@
 [data-style='listino'] .fmt-opt {
   padding: 6px 8px;
 }
+
+.dd-count {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  color: var(--nd-ink-2);
+}
+.dd-bad {
+  color: var(--nd-error);
+}
+.dd-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.dd-nav .caps {
+  margin-right: 6px;
+}
+.dd-doc {
+  max-height: 220px;
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  overflow: auto;
+  border: 1px solid var(--nd-rule);
+  background: var(--nd-surface-2);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre;
+}
+.dd-reading {
+  animation: nd-pulse 1.2s ease-in-out infinite alternate;
+}
+@keyframes nd-pulse {
+  from {
+    opacity: 0.45;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dd-reading {
+    animation: none;
+  }
+}

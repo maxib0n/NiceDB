@@ -372,6 +372,19 @@ async fn read_plan(
 
 impl Core {
     pub async fn explain(&self, req: ExplainRequest) -> Result<PlanReport> {
+        let (connection_id, database) = {
+            let session = self.live(&req.session_id).await?;
+            (
+                session.connection_id.clone(),
+                session.conn.server().database.clone(),
+            )
+        };
+        let report = self.explain_once(req).await?;
+        self.keep_plan(&connection_id, &database, &report);
+        Ok(report)
+    }
+
+    async fn explain_once(&self, req: ExplainRequest) -> Result<PlanReport> {
         let session = self.live(&req.session_id).await?;
         if session.caps.language == nd_driver::Language::Mql {
             return self.explain_mongo(&session, &req).await;

@@ -38,6 +38,8 @@ La palette ha tre modi; [[Tab]] passa al successivo, [[Shift+Tab]] al precedente
 | Spazio di lavoro | **Passa a questo spazio** | |
 | Comando | **Esegui** | |
 
+Script e query nei segnalibri hanno anche **Inserisci nell'editor**, che mette lo SQL nella scheda aperta dove sta il cursore (o al posto della selezione): con [[→]] dalla riga.
+
 Tabelle e viste hanno anche, tra le altre azioni, **Mostra nello schema ER**, **Modifica tabella…**, **Copia SELECT**, **Copia CREATE**, **Esporta dati…**, **Importa dati…**, **Dati di prova…**, la manutenzione del motore e **Dipendenze…**. Fermare una query o chiudere una sessione passa dalla conferma della produzione.
 
 ## Fissati, segnalibri e recenti
@@ -90,7 +92,12 @@ Le scorciatoie con il valore attuale si cambiano in **Impostazioni › Scorciato
 |---|---|
 | [[key:palette]] | Cerca ovunque |
 | [[key:palette_commands]] | Palette dei comandi |
+| [[key:presentation]] | Modalità presentazione |
 | [[key:new_tab]] | Nuova scheda sulla connessione attiva |
+| [[key:reopen_tab]] | Riapri l'ultima scheda chiusa |
+| [[key:open_file]] | Apri file SQL |
+| [[key:save_file]] | Salva la scheda nel suo file |
+| [[key:save_file_as]] | Salva con nome |
 | [[key:save_script]] | Salva come script |
 | [[key:panel_notes]] | Pannello note e script |
 | [[key:panel_history]] | Pannello cronologia |
@@ -125,6 +132,7 @@ Le scorciatoie con il valore attuale si cambiano in **Impostazioni › Scorciato
 | [[Home]] [[Fine]], [[Ctrl+Home]] [[Ctrl+Fine]] | inizio o fine riga, prima o ultima cella |
 | [[Shift+Spazio]], [[Ctrl+Spazio]], [[Ctrl+A]] | seleziona riga, colonna, tutto |
 | [[Ctrl+C]] | copia la selezione |
+| [[Ctrl+F]], [[F3]], [[Shift+F3]] | cerca nelle righe caricate, risultato dopo e prima |
 | [[Shift+Invio]], [[Alt+Invio]] | pannello valore, riga come scheda |
 | [[Invio]], [[F2]] o scrivere | modifica la cella (vista Dati) |
 | [[Canc]], [[Backspace]] | mette NULL, svuota e modifica |

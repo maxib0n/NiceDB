@@ -38,6 +38,8 @@ The palette has three modes; [[Tab]] moves to the next, [[Shift+Tab]] to the pre
 | Workspace | **Switch to this workspace** | |
 | Command | **Run** | |
 
+Scripts and bookmarked queries also have **Insert into editor**, which puts the SQL in the open tab at the cursor (or over the selection): [[→]] from the row.
+
 Tables and views also offer, among other actions, **Show in the ER diagram**, **Edit table…**, **Copy SELECT**, **Copy CREATE**, **Export data…**, **Import data…**, **Test data…**, the engine's maintenance and **Dependencies…**. Cancelling a query or closing a session goes through the production confirmation.
 
 ## Pinned, bookmarks and recent
@@ -90,7 +92,12 @@ Shortcuts shown with their current binding can be changed in **Settings › Keyb
 |---|---|
 | [[key:palette]] | Search everywhere |
 | [[key:palette_commands]] | Command palette |
+| [[key:presentation]] | Presentation mode |
 | [[key:new_tab]] | New tab on the active connection |
+| [[key:reopen_tab]] | Reopen the last closed tab |
+| [[key:open_file]] | Open SQL file |
+| [[key:save_file]] | Save the tab to its file |
+| [[key:save_file_as]] | Save as |
 | [[key:save_script]] | Save as script |
 | [[key:panel_notes]] | Notes and scripts panel |
 | [[key:panel_history]] | History panel |
@@ -125,6 +132,7 @@ Shortcuts shown with their current binding can be changed in **Settings › Keyb
 | [[Home]] [[End]], [[Ctrl+Home]] [[Ctrl+End]] | start or end of the row, first or last cell |
 | [[Shift+Space]], [[Ctrl+Space]], [[Ctrl+A]] | select row, column, everything |
 | [[Ctrl+C]] | copies the selection |
+| [[Ctrl+F]], [[F3]], [[Shift+F3]] | finds in the loaded rows, next and previous hit |
 | [[Shift+Enter]], [[Alt+Enter]] | value panel, row as a record |
 | [[Enter]], [[F2]] or typing | edits the cell (Data view) |
 | [[Del]], [[Backspace]] | sets NULL, clears and edits |

@@ -40,6 +40,9 @@ Ogni elemento è un documento, con gli attributi della chiave per primi. I numer
 ## Modificare gli elementi
 Gli elementi di un `SELECT *` o di uno `Scan`/`Query` senza proiezione si modificano per chiave: **Salva** riscrive l'elemento solo se c'è ancora, **Inserisci** solo se la chiave è libera, **Elimina** solo se l'elemento esiste. In produzione ogni scrittura passa dal controllo delle scritture e finisce nel registro come chiamata `PutItem` o `DeleteItem`.
 
+## Importare da un file
+Tasto destro su una tabella › **Importa documenti…**: ogni documento JSON diventa un elemento e deve avere le chiavi della tabella; un elemento che esiste già viene rifiutato. Vedi [Importare ed esportare](import-export).
+
 ## Scritture e produzione
 `SELECT` e le chiamate `Scan`, `Query`, `GetItem`, `BatchGetItem`, `Describe…` e `List…` sono letture; il resto scrive. `DeleteTable` e `UpdateTable` chiedono conferma come rischiose.
 

@@ -481,3 +481,22 @@
     display: none;
   }
 }
+
+.dry-impact {
+  padding: 10px 14px 12px;
+  border-bottom: 1px solid var(--nd-rule);
+}
+.dry-impact h3 {
+  margin: 0 0 6px;
+}
+.dry-impact ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: 400 12.5px/1.6 var(--nd-font-mono);
+  color: var(--nd-ink);
+}
+.dry-impact li.linked {
+  padding-left: 14px;
+  color: var(--nd-ink-2);
+}

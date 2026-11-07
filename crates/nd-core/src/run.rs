@@ -129,6 +129,7 @@ pub enum RunEvent {
         index: u32,
     },
     TransactionLost,
+    DryRunDropped,
     Transaction {
         state: crate::TxState,
     },
@@ -399,6 +400,10 @@ impl Core {
         let _busy = claim(&session)?;
         if session.tx_lost.swap(false, Ordering::AcqRel) {
             emit(RunEvent::TransactionLost);
+        }
+        if session.tx_state().dry_run {
+            self.undo_dry(&session).await;
+            emit(RunEvent::DryRunDropped);
         }
         let dialect = session.conn.sql()?;
         let text = req.text.as_str();

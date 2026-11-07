@@ -100,7 +100,8 @@ import {
   type GenSaved_Serialize,
 } from './bindings';
 import { m } from '../paraglide/messages';
-import type { DriverError_Serialize, GenRequest, PdfReport_Deserialize as PdfReport } from './bindings';
+import type { FileDrag } from './file-drop';
+import type { ColumnSample, Referencing, DocumentImport_Deserialize as DocumentImport, DriverError_Serialize, GenRequest, HistoryOutcome, PdfReport_Deserialize as PdfReport } from './bindings';
 import { fromBase64, toBase64 } from './bytes';
 import { backend as mock } from './mock';
 import { initFailure } from './session';
@@ -366,8 +367,15 @@ const real = {
     await unwrap(commands.runCancel(id));
   },
   explain: (request: ExplainRequest) => unwrap(commands.explain(request)),
+  writeRemovals: (sessionId: string, text: string, scope: RunScope) => unwrap(commands.writeRemovals(sessionId, text, scope)),
+  writeLinked: (sessionId: string, text: string, scope: RunScope, index: number, links: Referencing[]) => unwrap(commands.writeLinked(sessionId, text, scope, index, links)),
+  planHistory: (connectionId: string, database: string, sql: string) => unwrap(commands.planHistory(connectionId, database, sql)),
+  planSaved: async (id: number): Promise<PlanReport | null> => {
+    const text = await unwrap(commands.planSaved(id));
+    return text === null ? null : (JSON.parse(text) as PlanReport);
+  },
   paramsFound: (text: string, dialect: Dialect, scope: RunScope) => unwrap(commands.paramsFound(text, dialect, scope)),
-  historyList: (connectionId: string | null, query: string, limit: number) => unwrap(commands.historyList(connectionId, query, limit)),
+  historyList: (connectionId: string | null, query: string, outcome: HistoryOutcome, limit: number) => unwrap(commands.historyList(connectionId, query, outcome, limit)),
   erLayoutGet: (connectionId: string, database: string) => unwrap(commands.erLayoutGet(connectionId, database)),
   erLayoutSet: async (connectionId: string, database: string, layout: ErLayout): Promise<void> => {
     await unwrap(commands.erLayoutSet(connectionId, database, layout));
@@ -377,6 +385,17 @@ const real = {
     const file = await unwrap(commands.fileLoad());
     return file && { name: file.name, bytes: fromBase64(file.data) };
   },
+  sqlFileOpen: () => unwrap(commands.sqlFileOpen()),
+  sqlFileRead: (path: string) => unwrap(commands.sqlFileRead(path)),
+  listenFileDrop: async (handler: (e: FileDrag) => void): Promise<() => void> => {
+    const { getCurrentWebview } = await import('@tauri-apps/api/webview');
+    return getCurrentWebview().onDragDropEvent((e) => {
+      const p = e.payload;
+      handler(p.type === 'enter' || p.type === 'drop' ? { type: p.type, paths: p.paths } : { type: p.type });
+    });
+  },
+  sensitiveColumns: (columns: ColumnSample[]) => commands.sensitiveColumns(columns),
+  sqlFileSave: (path: string | null, name: string, text: string) => unwrap(commands.sqlFileSave(path, name, text)),
   reportPdf: (name: string, report: PdfReport): Promise<boolean> => unwrap(commands.reportPdf(name, report)),
   dataBrowse: (sessionId: string, browse: Browse) => unwrap(commands.dataBrowse(sessionId, browse)),
   dataPick: (sessionId: string, browse: Browse, jobId: string) => unwrap(commands.dataPick(sessionId, browse, jobId)),
@@ -473,6 +492,8 @@ const real = {
   dataExport: (request: DataExport, onProgress: (p: Progress) => void) => unwrap(commands.dataExport(request, progressChannel(onProgress))),
   dataImportSample: (sessionId: string, source: DataImportSource) => unwrap(commands.dataImportSample(sessionId, source)),
   dataImport: (request: DataImport, onProgress: (p: Progress) => void) => unwrap(commands.dataImport(request, progressChannel(onProgress))),
+  documentImportSample: (path: string) => unwrap(commands.documentImportSample(path)),
+  documentImport: (request: DocumentImport, onProgress: (p: Progress) => void) => unwrap(commands.documentImport(request, progressChannel(onProgress))),
   jobCancel: async (id: string): Promise<void> => {
     await unwrap(commands.jobCancel(id));
   },

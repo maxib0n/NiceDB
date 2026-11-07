@@ -37,6 +37,8 @@ async function saveThroughGate(profile: ConnectionProfile, secrets: Secrets, nam
   }
 }
 
+export const setLook = (c: ConnectionProfile, patch: Partial<Pick<ConnectionProfile, 'color' | 'mark'>>) => saveConnection({ ...$state.snapshot(c), ...patch }, keep);
+
 export async function saveConnection(profile: ConnectionProfile, secrets: Secrets): Promise<boolean> {
   const before = connections.list.find((c) => c.id === profile.id);
   const previous = before ? $state.snapshot(before) : null;

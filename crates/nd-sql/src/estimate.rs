@@ -173,6 +173,121 @@ pub fn count_query(sql: &str, dialect: Dialect) -> Option<String> {
     crate::is_read(&out, dialect).then_some(out)
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, specta::Type)]
+#[serde(rename_all = "snake_case")]
+pub enum RemovalKind {
+    Delete,
+    Truncate,
+    Drop,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Removal {
+    pub kind: RemovalKind,
+    pub relation: (String, String),
+    table: String,
+    cond: Option<String>,
+}
+
+pub fn removal(sql: &str, dialect: Dialect) -> Option<Removal> {
+    let w = scan(sql, dialect)?;
+    let top: Vec<&Word> = w.iter().filter(|x| x.depth == 0).collect();
+    let first = top.first()?.upper.as_str();
+    if first == "DELETE" {
+        let s = single(sql, dialect)?;
+        return Some(Removal {
+            kind: RemovalKind::Delete,
+            relation: object_name(s.table, dialect)?,
+            table: s.table.to_owned(),
+            cond: s.cond.map(str::to_owned),
+        });
+    }
+    let (kind, skip): (RemovalKind, &[&str]) = match (first, top.get(1).map(|x| x.upper.as_str())) {
+        ("TRUNCATE", _) => (RemovalKind::Truncate, &["TABLE", "ONLY"]),
+        ("DROP", Some("TABLE")) => (RemovalKind::Drop, &["TABLE", "IF", "EXISTS"]),
+        _ => return None,
+    };
+    let mut at = 1;
+    while top
+        .get(at)
+        .is_some_and(|x| skip.contains(&x.upper.as_str()))
+    {
+        at += 1;
+    }
+    let from = top.get(at - 1)?.end;
+    let end = top[at..].iter().find(|x| {
+        matches!(
+            x.upper.as_str(),
+            "," | "CASCADE" | "RESTRICT" | "PURGE" | "RESTART" | "CONTINUE"
+        )
+    });
+    if end.is_some_and(|x| x.upper == ",") {
+        return None;
+    }
+    let table = sql[from..end.map_or(sql.len(), |x| x.start)]
+        .trim()
+        .trim_end_matches(';')
+        .trim();
+    Some(Removal {
+        kind,
+        relation: object_name(table, dialect)?,
+        table: table.to_owned(),
+        cond: None,
+    })
+}
+
+impl Removal {
+    pub fn count(&self, dialect: Dialect) -> Option<String> {
+        let out = with_cond(
+            format!("SELECT count(*) FROM {}", self.table),
+            self.cond.as_deref(),
+        );
+        crate::is_read(&out, dialect).then_some(out)
+    }
+
+    pub fn linked(
+        &self,
+        dialect: Dialect,
+        child: (&str, &str),
+        columns: &[String],
+        ref_columns: &[String],
+    ) -> Option<String> {
+        if columns.is_empty()
+            || columns.len() != ref_columns.len()
+            || (columns.len() > 1 && dialect == Dialect::Mssql)
+        {
+            return None;
+        }
+        let q = |c: &String| crate::quote::ident(dialect, c);
+        let list = |cs: &[String]| cs.iter().map(q).collect::<Vec<_>>().join(", ");
+        let wrap = |cs: &[String]| {
+            if cs.len() > 1 {
+                format!("({})", list(cs))
+            } else {
+                list(cs)
+            }
+        };
+        let table = if child.0.is_empty() {
+            crate::quote::ident(dialect, child.1)
+        } else {
+            format!(
+                "{}.{}",
+                crate::quote::ident(dialect, child.0),
+                crate::quote::ident(dialect, child.1)
+            )
+        };
+        let inner = with_cond(
+            format!("SELECT {} FROM {}", list(ref_columns), self.table),
+            self.cond.as_deref(),
+        );
+        let out = format!(
+            "SELECT count(*) FROM {table} WHERE {} IN ({inner})",
+            wrap(columns)
+        );
+        crate::is_read(&out, dialect).then_some(out)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Preview {
     pub sql: String,

@@ -233,10 +233,10 @@ const DEFS: Record<Pointer, Def> = {
   crosshair: {
     hot: C,
     body: (x) =>
-      solid(x, [x.s === 'hard' ? { d: 'M8 8 H16 V16 H8 Z', w: 1.6 } : ring(C, 4.6, 1.6), ...[0, 90, 180, 270].map((d) => line(add(C, dir(d), 7.2), add(C, dir(d), 10), 1.8))]) +
+      solid(x, [x.s === 'hard' ? { d: 'M8 8 H16 V16 H8 Z', w: 1.2 } : ring(C, 4.6, 1.2), ...[0, 90, 180, 270].map((d) => line(add(C, dir(d), 7.2), add(C, dir(d), 10), 1.3))]) +
       `<circle cx="12" cy="12" r="0.9" fill="${x.ink.fill}" stroke="${x.ink.rim}" stroke-width="0.8"/>`,
   },
-  cell: { hot: C, body: (x) => solid(x, [line([12, 4.6], [12, 19.4], 4.4), line([4.6, 12], [19.4, 12], 4.4)]) },
+  cell: { hot: C, body: (x) => solid(x, [line([12, 5.4], [12, 18.6], 2.6), line([5.4, 12], [18.6, 12], 2.6)]) },
   move: { hot: C, body: (x) => solid(x, [0, 90, 180, 270].flatMap((d) => [line(C, add(C, dir(d), 6), 2.2), head(x.s, add(C, dir(d), 9.4), d, 4, 2.8)])) },
   'all-scroll': { hot: C, body: (x) => solid(x, [0, 90, 180, 270].map((d) => head(x.s, add(C, dir(d), 9.4), d, 3.6, 2.6)).concat(disk(x.s, C, 2))) },
   grab: { hot: C, body: (x) => solid(x, [disk(x.s, C, 7)]) + grip(x) },

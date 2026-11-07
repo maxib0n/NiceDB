@@ -23,7 +23,7 @@
 <div class="form-row host">
   <label class="form-field" class:invalid={showErrors && !hop.host.trim()}>
     <span class="caps">{hostLabel}</span>
-    <span class="field"><input bind:value={hop.host} placeholder={m.form_ph_ssh_host()} spellcheck="false" autocomplete="off" /></span>
+    <span class="field"><input data-private bind:value={hop.host} placeholder={m.form_ph_ssh_host()} spellcheck="false" autocomplete="off" /></span>
     <VarHint text={hop.host} {preview} />
   </label>
   <label class="form-field" class:invalid={showErrors && !portOk(hop.port)}>
@@ -35,7 +35,7 @@
 <div class="form-row two">
   <label class="form-field" class:invalid={showErrors && !hop.user.trim()}>
     <span class="caps">{m.form_ssh_user()}</span>
-    <span class="field"><input bind:value={hop.user} spellcheck="false" autocomplete="off" /></span>
+    <span class="field"><input data-private bind:value={hop.user} spellcheck="false" autocomplete="off" /></span>
     <VarHint text={hop.user} {preview} />
   </label>
   <div class="form-field">

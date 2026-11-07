@@ -3,6 +3,7 @@ mod backup;
 mod clickhouse;
 mod compare;
 mod design;
+mod documents;
 mod generate;
 mod mongo;
 mod monitor;
@@ -32,6 +33,7 @@ pub use clickhouse::{
     BackgroundMerge, ClickhouseAccess, PartitionSize, ProfileSetting, RowPolicy, SettingsProfile,
 };
 pub use compare::{CompareRequest, Comparison};
+pub use documents::{DocumentImport, DocumentSample, DocumentsImported};
 pub use generate::{
     AutoKind, FakeColumn, FakeRequest, GEN_ROWS_MAX, GenDone, GenFault, GenForeignKey,
     GenParentRef, GenPreview, GenProfile, GenWritten,
@@ -60,6 +62,7 @@ pub use search::{
 };
 pub use seclab::{
     SecCategory, SecFinding, SecSeverity, SecSkip, SecSubject, SecVerdict, SecurityReport,
+    sensitive_kind,
 };
 pub use timescale::HypertableSize;
 pub use transfer::{

@@ -47,6 +47,22 @@ Next to the tabs: row count and time, **Value**, **Copy** and **Export** ([Impor
 | [[Ctrl+A]] or click the corner | selects everything |
 | [[Esc]] | keeps only the active cell |
 | right edge of a header | drag to widen the column; double-click to fit the content |
+| drag a header | moves the column; a line shows where it will go |
+| [[Shift]] + drag a header | selects several columns |
+
+## Find in the grid
+With the grid focused, [[Ctrl+F]] opens **Find in results** at the top right. As you type, the cells holding the text (case does not matter) are coloured and the first becomes the active cell; the counter says which one you are on. [[Enter]] and [[Shift+Enter]], or [[F3]] and [[Shift+F3]], go to the next and the previous; [[Esc]] closes and goes back to the grid. It searches only the rows already loaded, up to 100,000 hits, and the value as stored (not the on-screen format of dates and numbers).
+
+## Hidden personal data
+With **Settings › Results › Personal data › Hidden** (off by default), columns that look like tax codes, IBANs, emails or phone numbers show `••••••`. They are recognised as in the Security lab: by the column name, confirmed by at least one of the first values. The eye in the header, or right-click › **Show values**, reveals them for that result; **Hide values** covers them again. It is meant for a shared screen: copy, export, the value panel and editing use the real value, and Ctrl+F does not search hidden columns.
+
+## Columns
+Right-click a header:
+- **Freeze on the left** keeps the column in place while you scroll sideways, for example the primary key; more than one can be frozen. **Unfreeze column** puts it back after the frozen ones.
+- **Fit width** and **Fit all columns** measure the loaded values.
+- **Reset order and widths** goes back to the query's order.
+
+Order, frozen columns and widths set by hand are remembered per table, on this computer: they apply in the **Data** view and in query results on that table, by column name.
 
 [[Shift+Enter]] opens the value panel for the cell: [Value panel and charts](value). Right-clicking a cell offers copying, sorting, selection and **Compare with…**.
 
@@ -76,8 +92,11 @@ If the connection drops during a query, a notice appears above the results. The 
 ## History
 **History** in the query bar, or [[key:panel_history]], opens the list of queries run on this connection, with date, time and rows. Failed queries are marked.
 - **Search history** filters by text.
+- **Connections**: **This one** shows only the tab's connection, **All** shows every connection, with its name before the date.
+- **Outcome**: **All**, **Succeeded** or **Failed**.
+- With the panel open, each run that ends shows up by itself, within the search and filters.
 - A click inserts the query at the end of the editor.
-- Right-click: **Insert into editor**, **Open in a new tab**, **Copy**.
+- Right-click: **Insert into editor**, **Open in a new tab** (on the connection where it ran), **Copy**.
 
 ## Limitations
 - The results grid is read-only: to change rows use the **Data** view ([Data view and editing](data)).

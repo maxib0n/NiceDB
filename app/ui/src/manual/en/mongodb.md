@@ -70,6 +70,9 @@ Every command goes through the same check as SQL statements ([Production safety]
 
 Edits from the **Documents** view are logged as the equivalent command.
 
+## Import from a file
+Right-click a collection › **Import documents…**: JSON, Extended JSON or NDJSON, with a preview, a count and the lines left out. See [Import and export](import-export).
+
 ## Limitations
 - There is no Data view, Schema or Tools for MongoDB.
 - No graphical plan: write `{ "explain": { "find": … }, "verbosity": "executionStats" }` and read the document.

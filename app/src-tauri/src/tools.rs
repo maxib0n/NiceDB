@@ -3,10 +3,11 @@ use std::sync::Arc;
 use nd_core::{
     Activity, Backed, BackupRequest, CompareRequest, Comparison, Core, DataExport, DataExported,
     DataImport, DataImportSample, DataImportSource, DataImported, DesignEngine, DesignScript,
-    FakeRequest, GenDone, GenPreview, GenProfile, KillMode, MaintenanceDone, MaintenanceRequest,
-    Monitor, Principals, Progress, RestoreRequest, RowCompareEvent, RowCompareRequest, RowCompared,
-    RowProbe, RowSource, SearchDone, SearchEvent, SearchPlanned, SearchTable, SecurityReport,
-    Sizes, SlowQueries, TableDesign, ToolCheck, ToolFamily, ValueSearch,
+    DocumentImport, DocumentSample, DocumentsImported, FakeRequest, GenDone, GenPreview,
+    GenProfile, KillMode, MaintenanceDone, MaintenanceRequest, Monitor, Principals, Progress,
+    RestoreRequest, RowCompareEvent, RowCompareRequest, RowCompared, RowProbe, RowSource,
+    SearchDone, SearchEvent, SearchPlanned, SearchTable, SecurityReport, Sizes, SlowQueries,
+    TableDesign, ToolCheck, ToolFamily, ValueSearch,
 };
 use tauri::State;
 use tauri::ipc::Channel;
@@ -52,6 +53,22 @@ pub async fn data_import(
     events: Channel<Progress>,
 ) -> Res<DataImported> {
     core.import_data(request, relay(events)).await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn document_import_sample(core: Ctx<'_>, path: String) -> Res<DocumentSample> {
+    core.document_sample(&path).await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn document_import(
+    core: Ctx<'_>,
+    request: DocumentImport,
+    events: Channel<Progress>,
+) -> Res<DocumentsImported> {
+    core.import_documents(request, relay(events)).await
 }
 
 #[tauri::command]

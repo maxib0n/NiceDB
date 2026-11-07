@@ -11,7 +11,7 @@ Folders group connections in the **Connections** column, by client or by project
 | Rename | [[F2]] on the folder, or right-click › **Rename** |
 | Open and close | click, or [[→]] and [[←]] |
 | Give it a colour | right-click › **Colour** |
-| Give it a mark (star, company, server…) | right-click › **Mark** |
+| Give it a mark (star, company, server, database, cloud…) | right-click › **Mark** |
 | Move | drag the folder or connection; right-click › **Move to**; [[Alt+↑]] and [[Alt+↓]] change the order |
 | Delete | right-click › **Delete folder**: its contents stay and move up one level |
 
@@ -45,6 +45,9 @@ When you switch, the tabs of the workspace you leave close and those of the new 
 
 A connection created or moved while a workspace is active joins that workspace, so it stays visible.
 
+### When NiceDB opens again
+NiceDB saves your tabs as you work, shortly after each change, and once more when you close the window: next time you find the active workspace's tabs with their unsaved text, even what you typed just before closing. Only the active tab connects right away; the others connect when you open them. Query results are not saved: run them again.
+
 ### Edit, duplicate, delete
 From the workspace menu: **Edit “name”…**, **Duplicate** and **Delete…**. Deleting a workspace leaves connections alone: only the tabs open in it are lost. [[Ctrl+Z]] undoes creating, editing and deleting.
 
@@ -77,6 +80,6 @@ To load them: **More actions** › **Import…**. For each item that already exi
 | Rename | double-click the title or [[F2]]; [[Enter]] confirms, [[Esc]] gives up |
 | Duplicate, close others, close tabs to the right | right-click the tab |
 | Scroll through tabs | mouse wheel over the tab row |
-| Reopen a closed tab | [[Ctrl+Z]] |
+| Reopen a closed tab | [[key:reopen_tab]], again for the earlier ones (up to 20), even after closing the last one; or [[Ctrl+Z]] |
 
 The tab tooltip shows the database, a running query, unapplied changes, an open transaction and production. When a connection has several databases open, the database name appears next to the title.

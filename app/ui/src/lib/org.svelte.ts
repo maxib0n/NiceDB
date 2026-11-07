@@ -196,6 +196,7 @@ export function capture(): WorkspaceSession {
     params: savedParams(t.id),
     design: designOf(t)?.saved(),
     trail: t.data.saved() ?? undefined,
+    file: t.file ? { path: t.file.path, dirty: t.unsaved } : undefined,
   }));
   const active = workspace.tabs.findIndex((t) => t.id === workspace.active);
   return { tabs, active: active < 0 ? null : active, split: workspace.split, history_open: workspace.historyOpen, widths: { ...workspace.widths } };
@@ -213,6 +214,10 @@ function tabsOf(session: WorkspaceSession | null): Tab[] {
       if (t.params?.length) seedParams(tab.id, t.params);
       if (t.design) restoreDesign(tab, t.design);
       if (t.trail) tab.data.restore(t.trail);
+      if (t.file) {
+        tab.file = { path: t.file.path, name: t.file.path.split(/[\\/]/).pop() ?? t.file.path };
+        tab.savedText = t.file.dirty ? null : t.text;
+      }
       return tab;
     });
 }
@@ -231,17 +236,19 @@ async function restore(session: WorkspaceSession | null) {
   workspace.widths = cleanWidths(session?.widths);
 }
 
+let saving: ReturnType<typeof setTimeout> | undefined;
+let switching = false;
+let restored = false;
+
 export async function startSpaces() {
   const all = await loadSpaces();
   await restore(all.active ? (all.list.find((w) => w.id === all.active)?.session ?? null) : all.all);
+  restored = true;
 }
 
-let saving: ReturnType<typeof setTimeout> | undefined;
-let switching = false;
-
-async function flush() {
+export async function flush() {
   clearTimeout(saving);
-  if (switching) return;
+  if (switching || !restored) return;
   const session = capture();
   const w = currentSpace();
   if (w) w.session = session;
@@ -251,7 +258,7 @@ async function flush() {
 
 export function watchSession() {
   if (!spaces.loaded) return;
-  for (const t of workspace.tabs) void [t.title, t.text, t.view, t.table, t.data.info, t.database];
+  for (const t of workspace.tabs) void [t.title, t.text, t.view, t.table, t.data.info, t.database, t.file, t.savedText];
   void [workspace.tabs.length, workspace.active, workspace.split, workspace.historyOpen, Object.entries(workspace.widths)];
   clearTimeout(saving);
   saving = setTimeout(() => void flush().catch(() => {}), 600);

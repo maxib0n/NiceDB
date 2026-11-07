@@ -31,7 +31,7 @@ export const REDIS_DEMO: ConnectionProfile[] = params().has('redis')
         name: 'Cache gestionale',
         folder: null,
         environment: params().get('redis') === 'prod' ? 'production' : 'development',
-        color: null,
+        color: null, mark: null,
         session: DEFAULT_SESSION,
         template: { kind: 'none' },
         raw_fields: {},

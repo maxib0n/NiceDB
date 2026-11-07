@@ -34,6 +34,9 @@ Nell'SQL di OpenSearch i nomi con trattini o parole riservate vanno tra apici in
 ## Modificare i documenti
 I documenti di una `_search` senza filtro sul `_source` si modificano per `_id`, nell'indice da cui vengono (anche cercando su un alias). **Salva** riscrive il documento se c'è ancora, **Inserisci** lo crea, **Elimina** lo toglie; dopo ogni scrittura l'indice si aggiorna prima di rispondere. In produzione tutto passa dal controllo delle scritture e finisce nel registro come richiesta.
 
+## Importare da un file
+Tasto destro su un indice › **Importa documenti…**: un `_id` nel documento diventa l'identificativo, gli altri lo ricevono dal server. Vedi [Importare ed esportare](import-export).
+
 ## Scritture e produzione
 `GET`, `HEAD` e le `POST` di sola lettura (`_search`, `_count`, `_msearch`, `_explain`, `_validate`, `_sql`…) sono letture; il resto scrive. `DELETE` di un indice, `_delete_by_query` o `_update_by_query` su tutti i documenti, `_close` e le impostazioni del cluster chiedono conferma come rischiose. [[key:cancel]] annulla anche sul server la richiesta in corso.
 

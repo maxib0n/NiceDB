@@ -1,4 +1,4 @@
-import { Briefcase, Building2, FlaskConical, Server, Shield, Star } from '@lucide/svelte';
+import { Briefcase, Bug, Building2, ChartColumn, Cloud, Database, Flag, FlaskConical, Globe, House, Server, Shield, Star, User } from '@lucide/svelte';
 import type { Component } from 'svelte';
 import { m } from '../paraglide/messages';
 import type { FolderMark, FolderTint } from './bindings';
@@ -22,6 +22,14 @@ export const MARKS: { id: FolderMark; icon: Icon; label: () => string }[] = [
   { id: 'flask', icon: FlaskConical, label: m.org_mark_flask },
   { id: 'server', icon: Server, label: m.org_mark_server },
   { id: 'shield', icon: Shield, label: m.org_mark_shield },
+  { id: 'database', icon: Database, label: m.org_mark_database },
+  { id: 'cloud', icon: Cloud, label: m.org_mark_cloud },
+  { id: 'house', icon: House, label: m.org_mark_house },
+  { id: 'user', icon: User, label: m.org_mark_user },
+  { id: 'flag', icon: Flag, label: m.org_mark_flag },
+  { id: 'bug', icon: Bug, label: m.org_mark_bug },
+  { id: 'chart', icon: ChartColumn, label: m.org_mark_chart },
+  { id: 'globe', icon: Globe, label: m.org_mark_globe },
 ];
 
 export const markIcon = (mark: FolderMark | null): Icon | null => MARKS.find((x) => x.id === mark)?.icon ?? null;

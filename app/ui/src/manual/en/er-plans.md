@@ -58,11 +58,18 @@ By default NiceDB asks for the **measured** plan: the query really runs and the 
 | **Drawing** | the plan as a flow from left to right: width is the number of rows passing through, the occupied track is where the time goes |
 | **Slip** | the list of nodes with rows, estimates, time or cost and share |
 | **Text** | the plan as the server returns it |
-| **Compare** | sets the tab's previous plan alongside: "Before and after", with "3 times faster" or "slower" |
+| **Compare** | sets the tab's previous plan alongside, or the one picked in the history: "Before and after", with "3 times faster" or "slower" |
+| **History** | the saved plans of this query, in place of the notes |
 | **Estimate only** | asks for the plan without running the query |
 | **Explain again** | takes the measured plan again |
 
 Above the drawing, **What happens** sums the plan up in a sentence ("The query took 1.2 s. The heaviest step is…"), and **Where the time goes** (or **Where the cost goes**, for an estimate) splits the total across the nodes.
+
+## Plan history
+Every **Explain** saves the plan on this computer, per connection and database: the last 50 of each query. Two queries count as the same even when spacing, comments, case or values differ: `where id = 5` and `where id = 7` share a history.
+- Under the query, when there are other plans, a line says how many and since when, and when the shape last changed.
+- **Shape changed** warns that the plan uses different operations, indexes or join order from the one before; **2.3 times slower** that time or cost went up by more than half.
+- **History** shows the list: date, time (or cost, for an estimate) and ◆ on shape changes. Click a plan to compare it with the current one in the **Slip** and the notes; again to go back to the tab's previous plan. An estimated plan and a measured one do not compare.
 
 ## Notes
 Below the plan, **Notes** lists the problems found, each with a severity (**Serious**, **Worth a look**, **Minor**), an explanation and a **Suggestion** to take with **Copy**:

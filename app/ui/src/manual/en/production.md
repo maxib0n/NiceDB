@@ -107,6 +107,11 @@ Passwords written in SQL (`PASSWORD '…'`, `IDENTIFIED BY …`, Redis `AUTH`, M
 
 The panel shows the connection's last 200 writes; the export holds all of them.
 
+### Put the old values back
+Changes applied from the **Data** view have **Revert…**: NiceDB remembers the values the rows had and prepares the inverse statements (an edit puts the old value back, a deleted row returns, an added row goes away), shows them in the confirmation window and runs them in one transaction, with the same unlock and confirmation as any write. Each statement must touch exactly one row: if a row has changed since, the revert stops and touches nothing. The revert goes into the log too and can be reverted in turn.
+
+Other writes are marked **cannot be reverted**: SQL written in the editor, imports, documents, keys and tool commands do not keep the old values. A row added with a key the database generated is found again by the values written: if more than one matches, the revert stops.
+
 ## Limitations
 - With manual commit, unlocking writes closes an open transaction that has not written yet: it was started read-only.
 - The log lives on this computer, in NiceDB's local database: it is not a server audit trail and does not see writes made by other tools.

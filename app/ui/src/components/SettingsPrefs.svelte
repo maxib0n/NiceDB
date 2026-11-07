@@ -59,6 +59,11 @@
     panel_notes: m.key_panel_notes,
     panel_history: m.key_panel_history,
     new_tab: m.key_new_tab,
+    reopen_tab: m.key_reopen_tab,
+    open_file: m.key_open_file,
+    save_file: m.key_save_file,
+    save_file_as: m.key_save_file_as,
+    presentation: m.key_presentation,
     palette: m.key_palette,
     palette_commands: m.key_palette_commands,
   };
@@ -240,6 +245,19 @@
       />
     </div>
     <p class="hint">{m.settings_display_hint()}</p>
+    <div class="setting row">
+      <h3 class="caps">{m.settings_mask()}</h3>
+      <Segmented
+        label={m.settings_mask()}
+        value={results.mask_sensitive ? 'on' : 'off'}
+        options={[
+          { value: 'off', label: m.settings_mask_off() },
+          { value: 'on', label: m.settings_mask_on() },
+        ] as const}
+        onchange={(v) => patch('results', { mask_sensitive: v === 'on' })}
+      />
+    </div>
+    <p class="hint">{m.settings_mask_hint()}</p>
   </section>
   {:else if section === 'safety'}
   <section class="pref-section" aria-labelledby="pref-safety">

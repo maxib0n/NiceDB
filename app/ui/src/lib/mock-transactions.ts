@@ -151,6 +151,11 @@ export function txMock(opts: { tables: Record<string, Gen>; profile: (sid: strin
 
   function wrap(run: Run): Run {
     return async (req, emit) => {
+      const was = of(req.session_id);
+      if (was.open && was.dry) {
+        end(was);
+        emit({ type: 'dry_run_dropped' });
+      }
       if (req.dry_run && pick(req).some((st) => WRITE.test(st.sql))) return dryRun(req, emit);
       const t = of(req.session_id);
       const sql = new Map<number, string>();

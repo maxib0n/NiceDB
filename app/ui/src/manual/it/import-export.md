@@ -49,7 +49,34 @@ Per poche righe basta la griglia: tasto destro › **Copia come** › **Testo co
 - Alla fine: «Importate 12.400 righe in clienti in 3 s», più le **Righe scartate** con numero di riga e motivo (le prime 500).
 - Su una connessione di produzione la finestra mostra l'interruttore della scrittura e l'importazione chiede la conferma scelta in Impostazioni: vedi [Sicurezza in produzione](production).
 
-## Passare connessioni a un collega
+## Importare documenti da un file
+Per MongoDB, Elasticsearch e DynamoDB: tasto destro su una collezione, un indice o una tabella › **Importa documenti…**, oppure il comando «Importa documenti…» in [[key:palette]].
+1. **Scegli un file…**: un array JSON, un documento per riga (NDJSON, JSON Lines, l'uscita di `mongoexport`) o documenti uno dopo l'altro, in file `.json`, `.ndjson` o `.jsonl`.
+2. NiceDB legge tutto il file e dice quanti documenti contiene, mostra i primi venti (con [[←]] e [[→]] nella finestra) ed elenca le righe che non si leggono.
+3. Controlla il nome della collezione, dell'indice o della tabella: un nome nuovo crea la collezione su MongoDB e l'indice su Elasticsearch; su DynamoDB la tabella deve esistere.
+4. **Salta e prosegui** lascia fuori i documenti rifiutati e li elenca con la riga; **Fermati al primo errore** si ferma lì.
+5. **Importa N documenti**. Su una connessione di produzione serve lo sblocco e il nome della connessione, come per ogni scrittura.
+
+Il JSON esteso (`$oid`, `$date`, `$numberLong`, `$numberDecimal`…) su MongoDB diventa il tipo giusto. Non c'è transazione: i documenti si scrivono a blocchi di 500 e quelli già scritti restano anche se fermi o annulli. Su MongoDB un blocco va al server in una volta sola; su Elasticsearch e DynamoDB un documento per richiesta, più lento. L'importazione finisce nel registro delle scritture.
+
+## Dalla riga di comando
+`nicedb run` esegue un file SQL su una connessione salvata in NiceDB e scrive i risultati in CSV, senza aprire la finestra. Usa le connessioni dell'app e le password del portachiavi: non vanno scritte da nessuna parte.
+
+```
+nicedb run --conn "Bassi — staging" report.sql > report.csv
+echo "select count(*) from ordini" | nicedb run --conn "Bassi — staging" --tsv -
+```
+
+| Opzione | Effetto |
+|---|---|
+| `--conn` | la connessione, col nome che ha in NiceDB (o il suo id) |
+| `--db` | un altro database dello stesso server |
+| `--csv`, `--tsv` | separati da virgola (di serie) o da tabulazione |
+| `--confirm "nome"` | su una connessione di produzione apre la scrittura e la conferma col nome della connessione |
+| `--risky` | esegue anche le istruzioni rischiose (`DROP`, `TRUNCATE`, `DELETE` senza `WHERE`…) |
+
+Ogni istruzione che restituisce righe produce un blocco con l'intestazione, separato dal successivo da una riga vuota; righe toccate ed errori vanno sull'uscita degli errori. Termina con 0 se tutto è andato, 1 se un'istruzione è fallita, 2 se il comando è sbagliato. Le scritture finiscono nel registro come quelle dell'app. Su Windows l'uscita si vede reindirizzandola in un file o in un altro comando.
+
 Un **Pacchetto cifrato** (`.nicedb`) porta cartelle, connessioni e, a scelta, altro, protetto da una frase segreta.
 
 1. Nella barra laterale, **Altre azioni** (i tre puntini) › **Esporta…** per tutto lo spazio di lavoro attuale; oppure tasto destro su una cartella o una connessione › **Esporta…**.

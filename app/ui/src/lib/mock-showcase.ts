@@ -9,7 +9,7 @@ export const SHOWCASE_DB = 'observatory';
 const pg = (host: string, database: string, user: string) =>
   ({ driver: 'postgres', host, port: 5432, database, user, tls: 'verify', ca_file: null, ssh: null, proxy: null, client_cert: null }) as const;
 const profile = (id: string, name: string, folder: string, environment: ConnectionProfile['environment'], target: ConnectionProfile['target']): ConnectionProfile => ({
-  id, name, folder, environment, color: null, session: DEFAULT_SESSION, template: { kind: 'none' }, raw_fields: {}, target,
+  id, name, folder, environment, color: null, mark: null, session: DEFAULT_SESSION, template: { kind: 'none' }, raw_fields: {}, target,
 });
 
 export const SHOWCASE_CONNECTIONS: ConnectionProfile[] = [

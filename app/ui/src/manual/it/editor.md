@@ -86,6 +86,15 @@ Esegui e Formatta lavorano sul cursore principale.
 
 Durante l'esecuzione l'istruzione in corso è evidenziata; dopo un errore, il punto indicato dal server è segnato nel testo.
 
+## File SQL
+- [[key:open_file]] apre un file `.sql` (o `.txt`) dal disco in una scheda nuova sulla connessione attiva, con il nome del file come titolo. Se il file è già aperto, passa alla sua scheda.
+- [[key:save_file]] scrive la scheda nel suo file. Una scheda che non viene da un file chiede dove salvarla.
+- [[key:save_file_as]], o tasto destro sulla scheda › **Salva con nome…**, sceglie un file nuovo.
+- **File** nella barra dell'editor raccoglie le tre azioni: **Apri file SQL…**, **Salva file** (o «Salva in «nome»» per una scheda che viene da un file) e **Salva con nome…**.
+- Trascinare uno o più file `.sql` sulla finestra li apre, ognuno in una scheda nuova sulla connessione della scheda attiva; un file già aperto porta alla sua scheda. Mentre trascini compare il riquadro «Rilascia per aprire i file SQL». Gli altri file restano fuori e un avviso li nomina.
+- La finestra parte dall'ultima cartella usata. Una scheda con modifiche non scritte nel file ha il segno delle modifiche, e il suggerimento sulla scheda dice il percorso.
+- Alla riapertura di NiceDB la scheda ricorda il file e se aveva modifiche non salvate. File fino a 16 MB, in UTF-8.
+
 ## Impostazioni dell'editor
 In **Impostazioni › Editor**: **Dimensione del carattere**, **Larghezza del rientro**, **Autocompletamento**, **Parole chiave maiuscole in Formatta**, **Nomi sconosciuti sottolineati**, **Errore in uno script**. Vedi [Impostazioni](settings).
 

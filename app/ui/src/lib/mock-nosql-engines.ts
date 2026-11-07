@@ -24,7 +24,7 @@ const profile = (id: string, name: string, target: ConnectionProfile['target']):
   name,
   folder: null,
   environment: params().get('nosql2') === 'prod' ? 'production' : 'development',
-  color: null,
+  color: null, mark: null,
   session: DEFAULT_SESSION,
   template: { kind: 'none' },
   raw_fields: {},

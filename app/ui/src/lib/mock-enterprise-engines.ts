@@ -25,7 +25,7 @@ const profile = (id: string, name: string, target: ConnectionProfile['target']):
   name,
   folder: null,
   environment: 'development',
-  color: null,
+  color: null, mark: null,
   session: DEFAULT_SESSION,
   template: { kind: 'none' },
   raw_fields: {},

@@ -46,6 +46,44 @@ pub struct ChangeSet {
     pub changes: Vec<Change>,
 }
 
+impl ChangeSet {
+    #[must_use]
+    pub fn inverse(&self) -> ChangeSet {
+        let changes = self
+            .changes
+            .iter()
+            .rev()
+            .map(|c| match c {
+                Change::Update { key, original, set } => {
+                    let now = |f: &Field| {
+                        set.iter()
+                            .find(|s| s.column == f.column)
+                            .unwrap_or(f)
+                            .clone()
+                    };
+                    Change::Update {
+                        key: key.iter().map(now).collect(),
+                        original: set.clone(),
+                        set: original.clone(),
+                    }
+                }
+                Change::Delete { original, .. } => Change::Insert {
+                    values: original.clone(),
+                },
+                Change::Insert { values } => Change::Delete {
+                    key: values.clone(),
+                    original: values.clone(),
+                },
+            })
+            .collect();
+        ChangeSet {
+            table: self.table.clone(),
+            columns: self.columns.clone(),
+            changes,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 #[serde(rename_all = "snake_case")]
 pub enum FilterOp {

@@ -101,7 +101,9 @@ Changes to the template reach its followers at once, except in their own fields.
 ## Manage connections
 Clicking a connection opens it and shows the object tree; if it is already open, it brings you to its tab. Next to the name: a mark while it opens, an error mark if opening fails (the reason is in the tooltip), and the buttons to disconnect and edit.
 
-The right-click menu offers: **Open** or **Go to connection**, **New tab**, **Tools** (see [Tools](tools)), **Edit…**, **Duplicate…**, **Copy as URL** (no password), **Move to**, **Workspaces**, **Export…**, **Disconnect** and **Delete…**.
+The right-click menu offers: **Open** or **Go to connection**, **New tab**, **Tools** (see [Tools](tools)), **Edit…**, **Duplicate…**, **Copy as URL** (no password), **Colour**, **Mark**, **Move to**, **Workspaces**, **Export…**, **Disconnect** and **Delete…**.
+
+**Colour** and **Mark** set a connection apart from the others, beyond its environment: the colour tints its icon in the tree and puts a coloured dot on its tabs; the mark (star, database, cloud, home, person, flag, server…) takes the place of the engine's logo. **None** removes them, [[Ctrl+Z]] undoes.
 
 Deleting asks for confirmation. For 30 seconds [[Ctrl+Z]] brings the whole connection back, passwords included.
 

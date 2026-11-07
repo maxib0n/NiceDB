@@ -1,6 +1,7 @@
 <script lang="ts">
   import { num } from '../lib/format';
   import { previewRows } from '../lib/tx';
+  import { effectLines } from '../lib/impact';
   import type { ResultSet, Tab } from '../lib/workspace.svelte';
   import { m } from '../paraglide/messages';
 
@@ -25,6 +26,14 @@
 </script>
 
 <div class="dry-view">
+  {#if tab.effects.length}
+    <section class="dry-impact" aria-label={m.impact_title()}>
+      <h3 class="caps">{m.impact_title()}</h3>
+      <ul>
+        {#each effectLines(tab.effects) as line, i (i)}<li class:linked={line.startsWith('↳')}>{line}</li>{/each}
+      </ul>
+    </section>
+  {/if}
   {#if writes.length === 0}
     <p class="results-empty">{m.tx_dry_empty()}</p>
   {/if}

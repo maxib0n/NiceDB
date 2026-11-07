@@ -3,7 +3,7 @@ import engines from './mock-plan-engines.json';
 import { DEFAULT_SESSION } from './session';
 
 const network = (host: string, port: number) => ({ host, port, database: 'gestionale', user: 'nicedb', tls: 'disable' as const, ca_file: null, ssh: null, proxy: null, client_cert: null });
-const base = { folder: null, environment: 'development' as const, color: null, session: DEFAULT_SESSION, template: { kind: 'none' as const }, raw_fields: {} };
+const base = { folder: null, environment: 'development' as const, color: null, mark: null, session: DEFAULT_SESSION, template: { kind: 'none' as const }, raw_fields: {} };
 
 export const ENGINE_CONNECTIONS: ConnectionProfile[] = [
   { ...base, id: 'officina-ms', name: 'Officina — SQL Server', target: { driver: 'sqlserver', ...network('10.0.4.12', 1433) } },

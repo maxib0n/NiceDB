@@ -8,7 +8,7 @@ const pg = (id: string, name: string, host: string, port: number, database: stri
   name,
   folder: null,
   environment: id === 'alt-listino' ? 'production' : 'development',
-  color: null,
+  color: null, mark: null,
   session: DEFAULT_SESSION,
   template: { kind: 'none' },
   raw_fields: {},

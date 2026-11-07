@@ -672,6 +672,50 @@ impl nd_driver::Connection for MongoConnection {
         }
     }
 
+    async fn insert_documents(
+        &self,
+        database: &str,
+        collection: &str,
+        documents: &[String],
+    ) -> Result<Vec<Option<String>>> {
+        let mut out: Vec<Option<String>> = Vec::with_capacity(documents.len());
+        let mut sent = Vec::new();
+        let mut at = Vec::new();
+        for (i, d) in documents.iter().enumerate() {
+            match document(d) {
+                Ok(doc) => {
+                    out.push(None);
+                    sent.push(doc);
+                    at.push(i);
+                }
+                Err(e) => out.push(Some(e.to_string())),
+            }
+        }
+        if sent.is_empty() {
+            return Ok(out);
+        }
+        let coll = self
+            .client
+            .database(database)
+            .collection::<Document>(collection);
+        match coll.insert_many(sent).ordered(false).await {
+            Ok(_) => Ok(out),
+            Err(e) => match *e.kind {
+                mongodb::error::ErrorKind::InsertMany(ref many)
+                    if many.write_concern_error.is_none() =>
+                {
+                    for w in many.write_errors.iter().flatten() {
+                        if let Some(&i) = at.get(w.index) {
+                            out[i] = Some(w.message.clone());
+                        }
+                    }
+                    Ok(out)
+                }
+                _ => Err(err(e)),
+            },
+        }
+    }
+
     async fn write_documents(&self, write: &DocumentWrite) -> Result<Outcome> {
         let (database, collection) = write.collection();
         let coll = self

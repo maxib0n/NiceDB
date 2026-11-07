@@ -196,6 +196,9 @@ pub(crate) async fn count_rows(
     let canceller = conn.canceller();
     let deadline = Instant::now() + COUNT_LIMIT;
     for (slot, (sql, params)) in out.iter_mut().zip(queries) {
+        if sql.is_empty() {
+            continue;
+        }
         let Some(left) = deadline.checked_duration_since(Instant::now()) else {
             break;
         };
@@ -587,6 +590,7 @@ impl Core {
             script.push("COMMIT".into());
             commit_alone(conn, outcome, rows, set.changes.len()).await
         };
+        let undo = matches!(outcome, ApplyOutcome::Applied { .. }).then(|| set.inverse());
         let (n, error) = match &outcome {
             ApplyOutcome::Applied { rows, .. } => (Some(*rows), None),
             ApplyOutcome::Conflict { index } => {
@@ -594,7 +598,7 @@ impl Core {
             }
             ApplyOutcome::Failed { error, .. } => (None, Some(error.to_string())),
         };
-        self.audit(&session, &script.join(";\n"), n, error);
+        self.audit_undoable(&session, &script.join(";\n"), n, error, undo);
         if let Err(e) = self.relock_if_expired(&session).await {
             tracing::warn!(error = %e, "writes not locked again");
         }

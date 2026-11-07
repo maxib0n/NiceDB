@@ -1,5 +1,6 @@
 <script lang="ts">
   import { m } from '../paraglide/messages';
+  import { appearance } from '../lib/appearance.svelte';
 
   const rows = [
     { d: 'M2 9H44M33 9L44 3M33 9L44 15', label: m.er_leg_many },
@@ -9,7 +10,7 @@
   ];
 </script>
 
-<details class="er-legend" open>
+<details class="er-legend" open={appearance.value.style === 'tavola'}>
   <summary>{m.er_legend()}</summary>
   <ul>
     {#each rows as r (r.d)}

@@ -11,7 +11,7 @@ Le cartelle raggruppano le connessioni nella colonna **Connessioni**, per client
 | Rinominare | [[F2]] sulla cartella, o tasto destro › **Rinomina** |
 | Aprire e chiudere | clic, oppure [[→]] e [[←]] |
 | Dare un colore | tasto destro › **Colore** |
-| Dare un segno (stella, azienda, server…) | tasto destro › **Segno** |
+| Dare un segno (stella, azienda, server, database, cloud…) | tasto destro › **Segno** |
 | Spostare | trascinare la cartella o la connessione; tasto destro › **Sposta in**; [[Alt+↑]] e [[Alt+↓]] cambiano l'ordine |
 | Eliminare | tasto destro › **Elimina cartella**: il contenuto resta, sale di un livello |
 
@@ -45,6 +45,9 @@ Cambiando spazio, le schede dello spazio lasciato si chiudono e tornano quelle d
 
 Una connessione creata o spostata mentre uno spazio è attivo entra nello spazio, così resta visibile.
 
+### Alla riapertura di NiceDB
+NiceDB salva le schede mentre lavori, poco dopo ogni modifica, e ancora quando chiudi la finestra: alla riapertura ritrovi le schede dello spazio attivo con il testo non salvato, anche quello scritto un attimo prima di chiudere. Si collega subito solo la scheda attiva; le altre quando le apri. I risultati delle query non vengono salvati: si rieseguono.
+
 ### Modificare, duplicare, eliminare
 Dal menu dello spazio: **Modifica «nome»…**, **Duplica** ed **Elimina…**. Eliminare uno spazio non tocca le connessioni: si perdono solo le schede aperte in quello spazio. [[Ctrl+Z]] annulla la creazione, la modifica e l'eliminazione.
 
@@ -77,6 +80,6 @@ Per caricarle: **Altre azioni** › **Importa…**. Per ogni voce che esiste gi�
 | Rinominare | doppio clic sul titolo o [[F2]]; [[Invio]] conferma, [[Esc]] rinuncia |
 | Duplicare, chiudere le altre, chiudere quelle a destra | tasto destro sulla scheda |
 | Scorrere le schede | rotella del mouse sulla riga delle schede |
-| Riaprire una scheda chiusa | [[Ctrl+Z]] |
+| Riaprire una scheda chiusa | [[key:reopen_tab]], più volte per le precedenti (fino a 20), anche dopo aver chiuso l'ultima; oppure [[Ctrl+Z]] |
 
 Il suggerimento sulla scheda dice database, query in corso, modifiche non applicate, transazione aperta e produzione. Quando una connessione ha più database aperti, il nome del database compare accanto al titolo.

@@ -3,11 +3,13 @@
   import { namesOf, sqlOf } from '../lib/family';
   import { sqlgenCommands } from '../lib/sqlgen.svelte';
   import { untrack } from 'svelte';
-  import { FlaskConical, History, LockOpen, NotebookPen, Play, Plus, Route, Save, Square, Wand, X } from '@lucide/svelte';
+  import { ChevronDown, FlaskConical, FolderOpen, History, LockOpen, NotebookPen, Play, Plus, Route, Save, SaveAll, Square, Wand, X } from '@lucide/svelte';
   import { keys, openMenu } from '../lib/contextmenu.svelte';
   import { clock, remaining, writesOpen } from '../lib/guard.svelte';
   import { explain } from '../lib/plan.svelte';
   import { activeTab, cancel, closeOthers, closeTab, closeTabs, databaseOf, duplicateTab, ensureSession, newTab, renameTab, revive, run, sessionOf, tabKey, workspace, type Tab } from '../lib/workspace.svelte';
+  import { openSqlFile, saveSqlFile } from '../lib/sqlfile.svelte';
+  import { connections } from '../lib/connections.svelte';
   import { openSave, panel, toggleHistory, togglePanel } from '../lib/panel.svelte';
   import { currentBindings } from '../lib/prefs.svelte';
   import { matches } from '../lib/shortcuts';
@@ -52,6 +54,7 @@
   let body = $state<HTMLDivElement>();
   let renaming = $state<string | null>(null);
 
+  const tintOf = (t: Tab) => connections.list.find((c) => c.id === t.connectionId)?.color ?? null;
   const tabProd = (t: Tab) => sessionOf(t)?.info.environment === 'production';
   const tabEdits = (t: Tab) => (void t.data.rev, !!t.data.pending && !t.data.pending.empty);
   const tabTx = (t: Tab) => !!txOf(sessionOf(t)?.info.session_id)?.open;
@@ -62,10 +65,21 @@
   const openNote = (id: string) => (remaining(id) > 0 ? m.tab_unlocked_timed({ time: clock(remaining(id)) }) : m.guard_open());
   const tabNote = (t: Tab) => {
     const open = tabOpen(t);
-    return [t.title, multi(t) && databaseOf(t), t.running && m.tab_running(), tabEdits(t) && m.tab_dirty(), tabTx(t) && m.tx_open(), tabProd(t) && m.env_production(), open && openNote(open)].filter(Boolean).join(' · ');
+    return [t.title, t.file?.path, multi(t) && databaseOf(t), t.running && m.tab_running(), tabEdits(t) && m.tab_dirty(), t.unsaved && m.file_unsaved(), tabTx(t) && m.tx_open(), tabProd(t) && m.env_production(), open && openNote(open)].filter(Boolean).join(' · ');
   };
 
   const sideHistory = $derived(workspace.historyOpen && tab?.view === 'query' && !design && !panel.open);
+
+  function fileMenu(e: MouseEvent, t: Tab) {
+    const b = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const k = currentBindings();
+    openMenu({ x: b.left, y: b.bottom + 2 }, [
+      { label: m.key_open_file(), icon: FolderOpen, shortcut: k.open_file ? keys(k.open_file) : undefined, run: () => openSqlFile(t.connectionId) },
+      'separator',
+      { label: t.file ? m.file_save_to({ name: t.file.name }) : m.key_save_file(), icon: Save, shortcut: k.save_file ? keys(k.save_file) : undefined, run: () => saveSqlFile(t) },
+      { label: m.key_save_file_as(), icon: SaveAll, shortcut: k.save_file_as ? keys(k.save_file_as) : undefined, run: () => saveSqlFile(t, true) },
+    ]);
+  }
 
   function saveCurrent() {
     if (!tab || !editor || tab.view !== 'query') return;
@@ -77,7 +91,22 @@
     const onkey = (e: KeyboardEvent) => {
       if (e.defaultPrevented || document.querySelector('dialog[open]')) return;
       const b = currentBindings();
-      const act = matches(e, b.save_script) ? saveCurrent : matches(e, b.panel_notes) ? () => togglePanel() : matches(e, b.panel_history) ? toggleHistory : matches(e, b.new_tab) ? () => tab && newTab(tab.connectionId) : null;
+      const inQuery = tab?.view === 'query' && !design;
+      const act = matches(e, b.save_script)
+        ? saveCurrent
+        : matches(e, b.panel_notes)
+          ? () => togglePanel()
+          : matches(e, b.panel_history)
+            ? toggleHistory
+            : matches(e, b.new_tab)
+              ? () => tab && newTab(tab.connectionId)
+              : matches(e, b.open_file)
+                ? () => tab && openSqlFile(tab.connectionId)
+                : inQuery && matches(e, b.save_file)
+                  ? () => tab && saveSqlFile(tab)
+                  : inQuery && matches(e, b.save_file_as)
+                    ? () => tab && saveSqlFile(tab, true)
+                    : null;
       if (!act) return;
       e.preventDefault();
       act();
@@ -114,6 +143,7 @@
     openMenu(e, [
       { label: m.tab_rename(), icon: ICON.rename, shortcut: 'F2', run: () => (renaming = t.id) },
       { label: m.tab_duplicate(), icon: ICON.duplicate, run: () => duplicateTab(t) },
+      ...(t.view === 'query' ? [{ label: m.key_save_file_as(), icon: ICON.save, run: () => saveSqlFile(t, true) }] : []),
       'separator',
       { label: m.tab_close(), icon: ICON.closeTab, run: () => closeTab(t.id) },
       { label: m.tab_close_others(), disabled: workspace.tabs.length < 2, run: () => closeOthers(t) },
@@ -225,7 +255,8 @@
   <div class="tabs" role="tablist" aria-label={m.tabs_label()} bind:this={tabBar} onwheel={tabWheel}>
     {#each workspace.tabs as t (t.id)}
       {@const open = tabOpen(t)}
-      <div class="tab" class:active={t.id === workspace.active} class:busy={t.running} class:prod={tabProd(t)} class:unlocked={!!open} class:dirty={tabEdits(t) || tabTx(t)} oncontextmenu={(e) => tabMenu(e, t)} onmousedown={(e) => e.button === 1 && e.preventDefault()} onauxclick={(e) => e.button === 1 && void closeTab(t.id)} role="none">
+      <div class="tab" class:active={t.id === workspace.active} class:busy={t.running} class:prod={tabProd(t)} class:unlocked={!!open} class:dirty={tabEdits(t) || tabTx(t) || t.unsaved} oncontextmenu={(e) => tabMenu(e, t)} onmousedown={(e) => e.button === 1 && e.preventDefault()} onauxclick={(e) => e.button === 1 && void closeTab(t.id)} role="none">
+        {#if tintOf(t)}<span class="tab-tint" data-tint={tintOf(t)} aria-hidden="true"></span>{/if}
         {#if renaming === t.id}
           <input class="tab-rename" value={t.title} aria-label={m.tab_rename()} use:autoselect onkeydown={(e) => renameKey(e, t)} onblur={(e) => commitRename(e.currentTarget, t)} />
         {:else}
@@ -302,6 +333,11 @@
           <Wand size={13} strokeWidth={1.8} aria-hidden="true" />
           {m.run_format()}
         </button>
+        <button class="btn ghost compactable file-menu" type="button" aria-haspopup="menu" data-tip={m.file_menu_tip()} aria-label={m.file_menu_tip()} onclick={(e) => fileMenu(e, tab)}>
+          <FolderOpen size={13} strokeWidth={1.8} aria-hidden="true" />
+          {m.file_menu()}
+          <ChevronDown size={12} strokeWidth={1.8} aria-hidden="true" />
+        </button>
         <button class="btn ghost compactable save-script" type="button" data-tip={m.panel_scripts_save()} aria-label={m.panel_scripts_save()} onclick={saveCurrent}>
           <Save size={13} strokeWidth={1.8} aria-hidden="true" />
           {m.panel_scripts_save_short()}
@@ -363,7 +399,7 @@
     {/if}
 
     {#if sideHistory}
-      <HistoryPanel connectionId={tab.connectionId} oninsert={(sql) => editor?.insert(sql)} onopen={(sql) => newTab(tab.connectionId, sql)} onclose={() => (workspace.historyOpen = false)} />
+      <HistoryPanel connectionId={tab.connectionId} oninsert={(sql) => editor?.insert(sql)} onopen={async (sql, cid) => (await ensureSession(cid, null)) && newTab(cid, sql)} onclose={() => (workspace.historyOpen = false)} />
     {/if}
     {#if panel.open}
       <NotesPanel connectionId={tab.connectionId} dialect={namesOf(session.info) ?? sqlOf(session.info)} {editor} inQuery={tab.view === 'query' && !design} onclose={() => (panel.open = false)} />

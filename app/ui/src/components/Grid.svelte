@@ -1,6 +1,10 @@
 <script lang="ts">
   import { onScrollbar } from '../lib/scrollbar';
-  import { ArrowDownWideNarrow, ArrowUpNarrowWide, ArrowUpRight, ClipboardCopy, Eraser, Filter, Link2, MoveHorizontal, Pencil, Trash2, X } from '@lucide/svelte';
+  import { ArrowDownWideNarrow, ArrowUpNarrowWide, ArrowUpRight, ChevronDown, ChevronUp, ClipboardCopy, Eraser, Filter, Link2, MoveHorizontal, Pencil, Pin, PinOff, RotateCcw, Search, Trash2, X } from '@lucide/svelte';
+  import { tick } from 'svelte';
+  import { api } from '../lib/api';
+  import { presentation } from '../lib/presentation.svelte';
+  import { Eye, EyeOff } from '@lucide/svelte';
   import { copyText, keys, openMenu, type MenuEntry } from '../lib/contextmenu.svelte';
   import { insertable, isNumericType, render, tableFromSql, type Cell as Value, type CopyFormat } from '../lib/copy';
   import { clipCell, COLUMN_WINDOW_FROM, columnWindow, type GridData, type GridEdit, type SortKey } from '../lib/grid';
@@ -17,6 +21,7 @@
   import { sizeText } from '../lib/value';
   import { isBinaryType } from '../lib/data.svelte';
   import { tag } from '../lib/format';
+  import { arrange, loadLayout, moveColumn, saveLayout, toggleFrozen } from '../lib/grid-layout';
 
   const dense = $derived(appearance.value.style === 'listino');
   const ROW = $derived(dense ? 20 : 24);
@@ -46,8 +51,9 @@
     dialect?: Dialect | null;
     partial?: boolean;
     summarize?: ((cols: SummaryColumn[]) => Promise<Stats>) | null;
+    layout?: string | null;
   }
-  let { partial = false, summarize = null, result, edit, sort = [], onsort, unsortable = null, onblocked, onfilter, extra = [], links, onfollow, cellmenu, onedit, editkey, gridkey, onfocus, dialect = null }: Props = $props();
+  let { layout = null, partial = false, summarize = null, result, edit, sort = [], onsort, unsortable = null, onblocked, onfilter, extra = [], links, onfollow, cellmenu, onedit, editkey, gridkey, onfocus, dialect = null }: Props = $props();
 
   let scroller: HTMLDivElement;
   let scrollTop = $state(0);
@@ -55,6 +61,9 @@
   let scrollLeft = $state(0);
   let viewWidth = $state(1200);
   let widths = $state<number[]>([]);
+  let order = $state<number[]>([]);
+  let frozen = $state(0);
+  let moving = $state<{ from: number; to: number } | null>(null);
   let measuredFor: GridData | null = null;
   let measuredColumns: unknown = null;
   let grown: number[] = [];
@@ -65,6 +74,8 @@
 
   const count = $derived(result.count);
   const columns = $derived(result.columns);
+  const dc = (p: number) => order[p] ?? p;
+  const cols = $derived(order.length === columns.length ? order.map((i) => columns[i] ?? { name: '', type_name: null }) : columns);
   const bounds = $derived({ rows: count, cols: columns.length });
   const numeric = $derived(columns.map((c) => isNumericType(c.type_name ?? null)));
   const style = $derived<CellStyle>({ nulls: prefs.value.results.null_display, dates: prefs.value.results.dates === 'local', numbers: prefs.value.results.numbers === 'grouped', locale: appearance.value.locale });
@@ -83,9 +94,10 @@
     return result.rows.slice(first, last);
   });
   const gutter = $derived(Math.max(GUTTER_MIN, (edit ? Math.max(edit.label(0).length, edit.label(count - 1).length) + 2 : String(count).length) * 8 + 18));
+  const shownWidths = $derived(cols.map((_, p) => widths[dc(p)] ?? 100));
   const offsets = $derived.by(() => {
     const out = [0];
-    for (const w of widths) out.push((out.at(-1) ?? 0) + w);
+    for (const w of shownWidths) out.push((out.at(-1) ?? 0) + w);
     return out;
   });
   const span = $derived.by(() => {
@@ -94,17 +106,25 @@
     const keep = editing?.c;
     return keep === undefined ? w : { c0: Math.min(w.c0, keep), c1: Math.max(w.c1, keep + 1) };
   });
+  const track = $derived.by(() => {
+    const lo = Math.max(span.c0, frozen);
+    const out: (number | 'skip')[] = [];
+    for (let p = 0; p < Math.min(frozen, cols.length); p++) out.push(p);
+    if (lo > frozen) out.push('skip');
+    for (let p = lo; p < span.c1; p++) out.push(p);
+    return out;
+  });
   const template = $derived.by(() => {
-    const n = widths.length;
-    const { c0, c1 } = span;
+    const n = shownWidths.length;
     const px = (w: number) => `${w}px`;
-    if (c0 <= 0 && c1 >= n) return `${gutter}px ${widths.map(px).join(' ')}`;
-    const before = offsets[c0] ?? 0;
-    const after = (offsets[n] ?? 0) - (offsets[Math.min(c1, n)] ?? 0);
-    return [px(gutter), ...(c0 > 0 ? [px(before)] : []), ...widths.slice(c0, c1).map(px), ...(after > 0 ? [px(after)] : [])].join(' ');
+    const lo = Math.max(span.c0, frozen);
+    const after = (offsets[n] ?? 0) - (offsets[Math.min(span.c1, n)] ?? 0);
+    return [px(gutter), ...track.map((t) => px(t === 'skip' ? (offsets[lo] ?? 0) - (offsets[frozen] ?? 0) : (shownWidths[t] ?? 0))), ...(after > 0 ? [px(after)] : [])].join(' ');
   });
   const sortable = $derived(!!onsort && !unsortable);
   const linked = $derived(columns.map((_, c) => links?.(c) ?? null));
+  const stickAt = (p: number) => gutter + (offsets[p] ?? 0);
+  const colAt = (p: number) => cols[p] ?? { name: '', type_name: null };
   const focus = $derived(sel.focus);
   const gid = $props.id();
   const fullCols = $derived.by(() => {
@@ -176,12 +196,31 @@
     measuredColumns = columns;
     const sample = result.rows.slice(0, 200);
     const f = fonts();
-    widths = columns.map((_, i) => Math.max(grown[i] ?? 0, measure(i, sample, 360, f, i >= COLUMN_WINDOW_FROM)));
+    const saved = loadLayout(layout).widths;
+    widths = columns.map((col, i) => saved[col.name] ?? Math.max(grown[i] ?? 0, measure(i, sample, 360, f, i >= COLUMN_WINDOW_FROM)));
   });
 
   $effect(() => {
     if (widths.length !== columns.length) widths = columns.map((c) => Math.max(64, c.name.length * 8 + 34));
   });
+
+  let arrangedFor: unknown = null;
+  $effect(() => {
+    if (arrangedFor === columns && order.length === columns.length) return;
+    arrangedFor = columns;
+    ({ order, frozen } = arrange(columns.map((c) => c.name), loadLayout(layout)));
+  });
+
+  function remember(sized: number[] = []) {
+    if (!layout) return;
+    const was = loadLayout(layout);
+    const keep = { ...was.widths };
+    for (const i of sized) {
+      const col = columns[i];
+      if (col) keep[col.name] = widths[i] ?? 100;
+    }
+    saveLayout(layout, { order: order.map((i) => columns[i]?.name ?? ''), frozen: order.slice(0, frozen).map((i) => columns[i]?.name ?? ''), widths: keep });
+  }
 
   $effect(() => {
     void result;
@@ -193,8 +232,8 @@
 
   $effect(() => {
     const f = sel.focus;
-    if (f) edit?.focus(f.r, f.c);
-    onfocus?.(f);
+    if (f) edit?.focus(f.r, dc(f.c));
+    onfocus?.(f && { r: f.r, c: dc(f.c) });
   });
 
   const statsOwner = {};
@@ -205,7 +244,7 @@
     void summarize;
     const t = setTimeout(() => {
       const hints = columns.map((col, c) => numericHint(col.type_name ?? null, numeric[c] ?? false));
-      const picked = s.ranges.length ? S.byColumn(s, shown).map((x) => ({ c: x.c, numeric: hints[x.c] ?? null, values: x.values })) : null;
+      const picked = s.ranges.length ? S.byColumn(s, shown).map((x) => ({ c: dc(x.c), numeric: hints[dc(x.c)] ?? null, values: x.values })) : null;
       const whole = partial && summarize && picked ? S.wholeColumns(s, { rows: result.count, cols: columns.length }) : null;
       const run = summarize;
       const wider =
@@ -221,7 +260,7 @@
   $effect(() => {
     const e = editing;
     const input = editInput;
-    onedit?.(e && input ? { r: e.r, c: e.c, value: e.value, input } : null);
+    onedit?.(e && input ? { r: e.r, c: dc(e.c), value: e.value, input } : null);
   });
 
   export function setEditValue(value: string) {
@@ -248,6 +287,11 @@
 
   type Spot = { area: 'head' | 'gutter' | 'cell' | 'corner'; r: number; c: number };
 
+  const contentX = (vx: number) => {
+    const x = vx - gutter;
+    return x < (offsets[frozen] ?? 0) ? x : x + scroller.scrollLeft;
+  };
+
   function columnAt(x: number): number {
     let lo = 0;
     let hi = widths.length - 1;
@@ -266,7 +310,7 @@
     const vx = (clientX - rect.left) / z;
     const vy = (clientY - rect.top) / z;
     const r = Math.min(count - 1, Math.max(0, Math.floor((vy - HEAD + position) / ROW)));
-    const c = Math.min(columns.length - 1, columnAt(vx + scroller.scrollLeft - gutter));
+    const c = Math.min(columns.length - 1, columnAt(contentX(vx)));
     const inHead = vy < HEAD && vy >= 0;
     const inGutter = vx < gutter && vx >= 0;
     return { area: inHead && inGutter ? 'corner' : inHead ? 'head' : inGutter ? 'gutter' : 'cell', r, c };
@@ -274,7 +318,7 @@
 
   const mods = (e: MouseEvent): S.Mods => ({ shift: e.shiftKey, toggle: e.ctrlKey || e.metaKey });
 
-  type Drag = { kind: 'cells' | 'rows' | 'cols'; x: number; y: number; start: Spot; moved: boolean; click: MouseEvent | null };
+  type Drag = { kind: 'cells' | 'rows' | 'cols'; x: number; y: number; x0: number; start: Spot; moved: boolean; move: boolean; click: MouseEvent | null };
   let drag = $state.raw<Drag | null>(null);
   let frame = 0;
 
@@ -286,6 +330,12 @@
       if (s.r !== sel.focus?.r || s.c !== sel.focus.c) sel = S.extendTo(sel, { r: s.r, c: s.c });
     } else if (d.kind === 'rows') {
       if (s.r !== sel.focus?.r) sel = S.dragRows(sel, s.r, bounds);
+    } else if (d.move) {
+      if (!d.moved && Math.abs(d.x - d.x0) < 5) return;
+      d.moved = true;
+      const x = contentX((d.x - scroller.getBoundingClientRect().left) / zoom());
+      const mid = ((offsets[s.c] ?? 0) + (offsets[s.c + 1] ?? 0)) / 2;
+      moving = { from: d.start.c, to: x > mid ? s.c + 1 : s.c };
     } else if (s.c !== d.start.c || d.moved) {
       if (!d.moved) {
         d.moved = true;
@@ -320,7 +370,7 @@
   }
 
   function startDrag(e: PointerEvent, kind: Drag['kind'], start: Spot) {
-    drag = { kind, x: e.clientX, y: e.clientY, start, moved: false, click: kind === 'cols' ? e : null };
+    drag = { kind, x: e.clientX, y: e.clientY, x0: e.clientX, start, moved: false, move: kind === 'cols' && !e.shiftKey && !e.ctrlKey && !e.metaKey, click: kind === 'cols' ? e : null };
     const move = (ev: PointerEvent) => {
       if (!drag) return;
       drag.x = ev.clientX;
@@ -334,7 +384,13 @@
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
-      if (d?.kind === 'cols' && !d.moved && d.click && ev.type === 'pointerup') headClick(d.start.c, d.click);
+      const to = moving?.to;
+      moving = null;
+      if (d?.move && d.moved && to !== undefined && ev.type === 'pointerup') {
+        order = moveColumn(order, frozen, d.start.c, to);
+        sel = S.EMPTY;
+        remember();
+      } else if (d?.kind === 'cols' && !d.moved && d.click && ev.type === 'pointerup') headClick(d.start.c, d.click);
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
@@ -344,7 +400,7 @@
   }
 
   function onpointerdown(e: PointerEvent) {
-    if (e.target instanceof Element && e.target.closest('.th-resize, .cell-input')) return;
+    if (e.target instanceof Element && e.target.closest('.th-resize, .cell-input, .grid-find')) return;
     if (onScrollbar(scroller, e.clientX, e.clientY)) return;
     const s = spotAt(e.clientX, e.clientY);
     if (e.target instanceof Element && e.target.closest('.fk-go') && onfollow && (e.button === 0 || e.button === 1)) {
@@ -352,7 +408,7 @@
       if (editing) finish(true);
       sel = S.clickCell(S.EMPTY, s);
       scroller.focus({ preventScroll: true });
-      onfollow(s.r, s.c, e.button === 1 || e.ctrlKey || e.metaKey);
+      onfollow(s.r, dc(s.c), e.button === 1 || e.ctrlKey || e.metaKey);
       return;
     }
     if (s.area === 'corner') {
@@ -390,7 +446,7 @@
   }
 
   function headClick(c: number, e: MouseEvent) {
-    if (sortable && onsort) return onsort(c, e.shiftKey);
+    if (sortable && onsort) return onsort(dc(c), e.shiftKey);
     sel = S.clickColumn(sel, c, bounds, { shift: e.shiftKey });
     if (unsortable) onblocked?.();
   }
@@ -401,8 +457,10 @@
     if (s.area === 'cell') begin(s.r, s.c);
   }
 
-  export function select(r: number, c: number) {
+  export function select(r: number, column: number) {
     if (!count || !columns.length) return;
+    const at = order.indexOf(column);
+    const c = at < 0 ? column : at;
     if (editing) finish(true);
     sel = S.clickCell(S.EMPTY, { r: Math.min(count - 1, Math.max(0, r)), c: Math.min(columns.length - 1, Math.max(0, c)) });
     if (sel.focus) {
@@ -416,20 +474,130 @@
   }
 
   export function value(r: number, c: number): string | null {
-    return shown(r, c);
-  }
-
-  function shown(r: number, c: number): string | null {
     const v = edit?.cell(r, c);
     return v ? v.value : (result.rows[r]?.[c] ?? null);
   }
 
+  const shown = (r: number, p: number) => value(r, dc(p));
+
+  let masked = $state.raw<(string | null)[]>([]);
+  let revealed = $state.raw(new Set<number>());
+  const hasRows = $derived(count > 0);
+  const hidden = (c: number) => !!masked[c] && !revealed.has(c);
+  const KIND: Record<string, () => string> = { cf: m.sec_d_cf, iban: m.sec_d_iban, email: m.sec_d_email, phone: m.sec_d_phone };
+
+  $effect(() => {
+    const on = prefs.value.results.mask_sensitive || presentation.on;
+    const cs = columns;
+    void hasRows;
+    revealed = new Set();
+    if (!on || !cs.length) {
+      masked = [];
+      return;
+    }
+    let live = true;
+    const sample = result.rows.slice(0, 50);
+    void api
+      .sensitiveColumns(cs.map((col, i) => ({ name: col.name, values: sample.flatMap((row) => row[i] ?? []).slice(0, 20) })))
+      .then((kinds) => live && (masked = kinds))
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  });
+
+  function toggleMask(c: number) {
+    const next = new Set(revealed);
+    if (next.has(c)) next.delete(c);
+    else next.add(c);
+    revealed = next;
+  }
+
+  const MAX_HITS = 100_000;
+  let finding = $state(false);
+  let needle = $state('');
+  let findInput = $state<HTMLInputElement | null>(null);
+  let hits = $state.raw<S.Cell[]>([]);
+  let hitKeys = $state.raw(new Set<number>());
+  let hitAt = $state(-1);
+
+  $effect(() => {
+    const q = needle.trim().toLowerCase();
+    void result.rev;
+    void count;
+    void order;
+    if (!finding || !q) {
+      hits = [];
+      hitKeys = new Set();
+      hitAt = -1;
+      return;
+    }
+    const t = setTimeout(() => {
+      const found: S.Cell[] = [];
+      const keys = new Set<number>();
+      const n = columns.length;
+      scan: for (let r = 0; r < count; r++)
+        for (let p = 0; p < n; p++) {
+          if (hidden(dc(p))) continue;
+          const v = value(r, dc(p));
+          if (v === null || !v.toLowerCase().includes(q)) continue;
+          found.push({ r, c: p });
+          keys.add(r * n + dc(p));
+          if (found.length >= MAX_HITS) break scan;
+        }
+      hits = found;
+      hitKeys = keys;
+      hitAt = -1;
+      if (found.length) goHit(0, false);
+    }, 120);
+    return () => clearTimeout(t);
+  });
+
+  function goHit(i: number, focusGrid = true) {
+    if (!hits.length) return;
+    hitAt = (i + hits.length) % hits.length;
+    const h = hits[hitAt];
+    if (!h) return;
+    if (editing) finish(true);
+    sel = S.clickCell(S.EMPTY, h);
+    reveal(h.r);
+    revealColumn(h.c);
+    if (focusGrid) findInput?.focus();
+  }
+
+  async function openFind() {
+    finding = true;
+    await tick();
+    findInput?.focus();
+    findInput?.select();
+  }
+
+  function closeFind() {
+    finding = false;
+    scroller.focus({ preventScroll: true });
+  }
+
+  function findKey(e: KeyboardEvent) {
+    e.stopPropagation();
+    const mod = e.ctrlKey || e.metaKey;
+    if (e.key === 'Enter' || e.key === 'F3') {
+      e.preventDefault();
+      goHit(hitAt + (e.shiftKey ? -1 : 1));
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeFind();
+    } else if (mod && e.key.toLowerCase() === 'f') {
+      e.preventDefault();
+      findInput?.select();
+    }
+  }
+
   function begin(r: number, c: number, initial?: string) {
     if (editing?.r === r && editing.c === c) return;
-    if (!edit || !edit.start(r, c)) return;
+    if (!edit || !edit.start(r, dc(c))) return;
     sel = S.clickCell(S.EMPTY, { r, c });
     const now = shown(r, c) ?? '';
-    const huge = initial === undefined && now.length > HUGE_EDIT && !isBinaryType(columns[c]?.type_name ?? '');
+    const huge = initial === undefined && now.length > HUGE_EDIT && !isBinaryType(cols[c]?.type_name ?? '');
     editing = huge ? { r, c, value: '', huge: now.length } : { r, c, value: initial ?? now };
   }
 
@@ -438,7 +606,7 @@
     if (!e) return;
     editing = null;
     if (save && !(e.huge && e.value === '')) {
-      if (edit?.commit(e.r, e.c, e.value) === false && !blur) {
+      if (edit?.commit(e.r, dc(e.c), e.value) === false && !blur) {
         editing = e;
         return;
       }
@@ -451,7 +619,8 @@
     scroller.focus({ preventScroll: true });
   }
 
-  function fit(r: number, c: number) {
+  function fit(r: number, p: number) {
+    const c = dc(p);
     const cv = edit?.cell(r, c);
     if (!cv) return;
     const font = getComputedStyle(scroller).fontFamily;
@@ -486,7 +655,7 @@
     node.setSelectionRange(end, end);
   }
 
-  const sortOf = (c: number) => sort.findIndex((k) => k.column === c);
+  const sortOf = (p: number) => sort.findIndex((k) => k.column === dc(p));
 
   function reveal(r: number) {
     const top = r * ROW;
@@ -496,9 +665,11 @@
   }
 
   function revealColumn(c: number) {
-    const x0 = offsets[c] ?? 0;
-    const x1 = offsets[c + 1] ?? x0;
-    const room = scroller.clientWidth - gutter;
+    if (c < frozen) return;
+    const pinned = offsets[frozen] ?? 0;
+    const x0 = (offsets[c] ?? 0) - pinned;
+    const x1 = (offsets[c + 1] ?? 0) - pinned;
+    const room = scroller.clientWidth - gutter - pinned;
     if (x0 < scroller.scrollLeft) scroller.scrollLeft = x0;
     else if (x1 > scroller.scrollLeft + room) scroller.scrollLeft = x1 - room;
   }
@@ -506,7 +677,7 @@
   export function selection(): { columns: typeof columns; rows: Value[][] } {
     if (!sel.ranges.length) return { columns, rows: result.rows };
     const p = S.project(sel, shown);
-    return { columns: p.cols.flatMap((c) => columns[c] ?? []), rows: p.cells.map((row) => row.map((v) => v ?? null)) };
+    return { columns: p.cols.flatMap((c) => cols[c] ?? []), rows: p.cells.map((row) => row.map((v) => v ?? null)) };
   }
 
   export async function copy(format: CopyFormat) {
@@ -522,6 +693,31 @@
 
   function autofit(c: number) {
     widths[c] = measure(c, result.rows.slice(0, 2000), 720);
+    remember([c]);
+  }
+
+  function autofitAll() {
+    const sample = result.rows.slice(0, 2000);
+    const f = fonts();
+    widths = columns.map((_, i) => measure(i, sample, 720, f, i >= COLUMN_WINDOW_FROM));
+    remember(columns.map((_, i) => i));
+  }
+
+  function freeze(p: number) {
+    ({ order, frozen } = toggleFrozen(order, frozen, p));
+    sel = S.EMPTY;
+    remember();
+  }
+
+  function resetLayout() {
+    saveLayout(layout, { order: [], frozen: [], widths: {} });
+    order = columns.map((_, i) => i);
+    frozen = 0;
+    grown = [];
+    const sample = result.rows.slice(0, 200);
+    const f = fonts();
+    widths = columns.map((_, i) => measure(i, sample, 360, f, i >= COLUMN_WINDOW_FROM));
+    sel = S.EMPTY;
   }
 
   function selectedCells(): S.Cell[] {
@@ -537,7 +733,7 @@
 
   function setNull() {
     if (!edit) return;
-    for (const { r, c } of selectedCells()) edit.setNull(r, c);
+    for (const { r, c } of selectedCells()) edit.setNull(r, dc(c));
   }
 
   function toggleDelete() {
@@ -562,6 +758,16 @@
   }
 
   function onkeydown(e: KeyboardEvent) {
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === 'f') {
+      e.preventDefault();
+      void openFind();
+      return;
+    }
+    if (e.key === 'F3' && hits.length) {
+      e.preventDefault();
+      goHit(hitAt + (e.shiftKey ? -1 : 1), false);
+      return;
+    }
     if (e.key === 'F4' && focus && onfollow) {
       e.preventDefault();
       onfollow(focus.r, focus.c, e.shiftKey);
@@ -611,9 +817,10 @@
     }
   }
 
-  function resize(e: PointerEvent, c: number) {
+  function resize(e: PointerEvent, p: number) {
     e.preventDefault();
     e.stopPropagation();
+    const c = dc(p);
     const start = e.clientX;
     const w0 = widths[c] ?? 100;
     const z = zoom();
@@ -625,6 +832,7 @@
     const onup = () => {
       target.removeEventListener('pointermove', onmove);
       target.removeEventListener('pointerup', onup);
+      remember([c]);
     };
     target.addEventListener('pointermove', onmove);
     target.addEventListener('pointerup', onup);
@@ -652,9 +860,9 @@
     const blocked = unsortable ?? undefined;
     return [
       'separator',
-      { label: m.grid_sort_asc(), icon: ArrowUpNarrowWide, disabled: !!blocked, hint: blocked, run: () => onsort(c, false, 'asc') },
-      { label: m.grid_sort_desc(), icon: ArrowDownWideNarrow, disabled: !!blocked, run: () => onsort(c, false, 'desc') },
-      !!k && { label: m.grid_sort_off(), icon: X, run: () => onsort(c, true, 'none') },
+      { label: m.grid_sort_asc(), icon: ArrowUpNarrowWide, disabled: !!blocked, hint: blocked, run: () => onsort(dc(c), false, 'asc') },
+      { label: m.grid_sort_desc(), icon: ArrowDownWideNarrow, disabled: !!blocked, run: () => onsort(dc(c), false, 'desc') },
+      !!k && { label: m.grid_sort_off(), icon: X, run: () => onsort(dc(c), true, 'none') },
     ];
   }
 
@@ -701,12 +909,12 @@
   }
 
   function linkItems(r: number, c: number): MenuEntry[] {
-    const items = cellmenu?.(r, c) ?? [];
+    const items = cellmenu?.(r, dc(c)) ?? [];
     return items.length ? ['separator', ...items] : [];
   }
 
   function open(at: MouseEvent | { x: number; y: number }, s: Spot) {
-    const col = columns[s.c];
+    const col = cols[s.c];
     if (!col) return openMenu(at, []);
     const n = S.count(sel);
     if (s.area === 'head' || s.area === 'corner') {
@@ -716,7 +924,11 @@
         { label: m.grid_copy_column(), run: () => copyColumn(s.c) },
         ...sortItems(s.c),
         'separator',
-        { label: m.grid_autofit(), icon: MoveHorizontal, run: () => autofit(s.c) },
+        !!masked[dc(s.c)] && { label: hidden(dc(s.c)) ? m.grid_mask_show() : m.grid_mask_hide(), icon: hidden(dc(s.c)) ? Eye : EyeOff, run: () => toggleMask(dc(s.c)) },
+        { label: s.c < frozen ? m.grid_unfreeze() : m.grid_freeze(), icon: s.c < frozen ? PinOff : Pin, run: () => freeze(s.c) },
+        { label: m.grid_autofit(), icon: MoveHorizontal, run: () => autofit(dc(s.c)) },
+        { label: m.grid_autofit_all(), icon: MoveHorizontal, run: autofitAll },
+        !!layout && { label: m.grid_layout_reset(), icon: RotateCcw, run: resetLayout },
       ]);
     }
     if (s.area === 'gutter') {
@@ -737,7 +949,7 @@
       copyAs(),
       { label: m.grid_copy_column(), hint: col.name, run: () => copyColumn(s.c) },
       ...sortItems(s.c),
-      !!onfilter && { label: m.grid_filter_value(), icon: Filter, hint: value === null ? 'NULL' : value.length > 24 ? `${value.slice(0, 24)}…` : value, run: () => onfilter(s.c, value) },
+      !!onfilter && { label: m.grid_filter_value(), icon: Filter, hint: value === null ? 'NULL' : value.length > 24 ? `${value.slice(0, 24)}…` : value, run: () => onfilter(dc(s.c), value) },
       ...linkItems(s.r, s.c),
       ...editItems(s.r, s.c),
       'separator',
@@ -748,6 +960,7 @@
   }
 </script>
 
+<div class="grid-wrap">
 <div
   class="grid"
   class:dragging={!!drag}
@@ -772,13 +985,18 @@
 >
   <div class="head" style:grid-template-columns={template} role="row">
     <div class="gutter corner" role="columnheader" aria-label={m.grid_select_all()} data-tip={m.grid_select_all()}></div>
-    {#if span.c0 > 0}<div class="skip" aria-hidden="true"></div>{/if}
-    {#each columns.slice(span.c0, span.c1) as col, k (span.c0 + k)}
-      {@const c = span.c0 + k}
+    {#each track as t (t)}
+      {#if t === 'skip'}<div class="skip" aria-hidden="true"></div>{:else}
+      {@const c = t}
+      {@const col = colAt(c)}
       {@const sk = sortOf(c)}
       <div
         class="th"
-        class:num={numeric[c]}
+        class:frozen={c < frozen}
+        class:edge={c === frozen - 1}
+        class:moving={moving?.from === c}
+        style:left={c < frozen ? `${stickAt(c)}px` : undefined}
+        class:num={numeric[dc(c)]}
         class:sortable
         class:unsortable={!!onsort && !!unsortable}
         class:picked={fullCols.has(c)}
@@ -787,12 +1005,15 @@
         data-tip={onsort && unsortable ? `${col.type_name ?? ''}${col.type_name ? ' · ' : ''}${unsortable}` : (col.type_name ?? '')}
       >
         <span class="th-name">{col.name}</span>
-        {#if linked[c]}<span class="th-fk" data-tip={linked[c]}><Link2 size={11} strokeWidth={2} aria-label={linked[c]} /></span>{/if}
+        {#if linked[dc(c)]}<span class="th-fk" data-tip={linked[dc(c)]}><Link2 size={11} strokeWidth={2} aria-label={linked[dc(c)]} /></span>{/if}
         {#if sk >= 0}<span class="th-sort" aria-hidden="true">{sort[sk]?.descending ? '↓' : '↑'}{sort.length > 1 ? sk + 1 : ''}</span>{/if}
         {#if col.type_name}<span class="th-type">{col.type_name}</span>{/if}
-        <span class="th-resize" aria-hidden="true" onpointerdown={(e) => resize(e, c)} ondblclick={(e) => (e.stopPropagation(), autofit(c))}></span>
+        {#if masked[dc(c)]}<button class="th-mask" type="button" aria-pressed={!hidden(dc(c))} aria-label={hidden(dc(c)) ? m.grid_mask_show() : m.grid_mask_hide()} data-tip={`${KIND[masked[dc(c)] ?? '']?.() ?? ''} · ${hidden(dc(c)) ? m.grid_mask_show() : m.grid_mask_hide()}`} onpointerdown={(e) => e.stopPropagation()} onclick={() => toggleMask(dc(c))}>{#if hidden(dc(c))}<EyeOff size={12} strokeWidth={2} />{:else}<Eye size={12} strokeWidth={2} />{/if}</button>{/if}
+        <span class="th-resize" aria-hidden="true" onpointerdown={(e) => resize(e, c)} ondblclick={(e) => (e.stopPropagation(), autofit(dc(c)))}></span>
       </div>
+      {/if}
     {/each}
+    {#if moving}<div class="th-drop" style:left="{gutter + (offsets[moving.to] ?? 0)}px" aria-hidden="true"></div>{/if}
   </div>
   <div class="body" style:height="{bodyHeight}px">
     <div class="window" style:transform="translateY({windowTop}px)">
@@ -818,38 +1039,119 @@
             <span class="gutter-n">{edit ? edit.label(r) : r + 1}</span>
             {#if rv?.note}<span class="sr-only">{rv.note}</span>{/if}
           </div>
-          {#if span.c0 > 0}<div class="skip" aria-hidden="true"></div>{/if}
-          {#each row.slice(span.c0, span.c1) as cell, k (span.c0 + k)}
-            {@const c = span.c0 + k}
-            {@const cv = edit?.cell(r, c) ?? null}
+          {#each track as t (t)}
+            {#if t === 'skip'}<div class="skip" aria-hidden="true"></div>{:else}
+            {@const c = t}
+            {@const cell = row[dc(c)] ?? null}
+            {@const cv = edit?.cell(r, dc(c)) ?? null}
             {@const value = cv ? cv.value : cell}
             {@const on = isSel(r, c)}
             <div
               class="td"
-              class:num={numeric[c]}
+              class:frozen={c < frozen}
+              class:edge={c === frozen - 1}
+              style:left={c < frozen ? `${stickAt(c)}px` : undefined}
+              class:num={numeric[dc(c)]}
               class:sel={on}
               class:focus={focus?.r === r && focus?.c === c}
               class:changed={cv?.was !== undefined}
               class:applied={!!edit?.applied(r, c)}
               class:editing={editing?.r === r && editing.c === c}
-              class:fk={!!linked[c] && value !== null}
+              class:fk={!!linked[dc(c)] && value !== null}
+              class:hit={hitKeys.has(r * columns.length + dc(c))}
+              class:hit-on={hits[hitAt]?.r === r && hits[hitAt]?.c === c}
               role="gridcell"
               id={focus?.r === r && focus?.c === c ? `${gid}-cell` : undefined}
               aria-colindex={c + 2}
               aria-selected={on}
             >
               {#if editing?.r === r && editing.c === c}
-                <input class="cell-input" bind:this={editInput} bind:value={editing.value} placeholder={editing.huge ? m.grid_edit_huge({ size: sizeText(editing.huge, tag()) }) : undefined} data-tip={editing.huge ? m.grid_edit_huge_tip() : undefined} use:autofocus onkeydown={editorKey} onblur={() => finish(true, undefined, true)} aria-label={columns[c]?.name} />
-              {:else}{#if cv && cv.was !== undefined}<s class="was">{cv.was === null ? nullShown : show(cv.was ?? '', c)}</s>{#if rv?.n}<i class="rev" aria-hidden="true">{rv.n}</i>{/if}{/if}<span class="val">{#if value === null}<span class="null">{cv?.hint ?? nullShown}</span>{:else}{show(value ?? '', c)}{/if}</span>{#if linked[c] && value !== null && onfollow}<span class="fk-go" aria-hidden="true"><ArrowUpRight size={12} strokeWidth={2} /></span>{/if}{/if}
+                <input class="cell-input" bind:this={editInput} bind:value={editing.value} placeholder={editing.huge ? m.grid_edit_huge({ size: sizeText(editing.huge, tag()) }) : undefined} data-tip={editing.huge ? m.grid_edit_huge_tip() : undefined} use:autofocus onkeydown={editorKey} onblur={() => finish(true, undefined, true)} aria-label={colAt(c).name} />
+              {:else}{#if cv && cv.was !== undefined}<s class="was">{cv.was === null ? nullShown : show(cv.was ?? '', dc(c))}</s>{#if rv?.n}<i class="rev" aria-hidden="true">{rv.n}</i>{/if}{/if}<span class="val">{#if value === null}<span class="null">{cv?.hint ?? nullShown}</span>{:else if hidden(dc(c))}<span class="masked" aria-label={m.grid_masked()}>••••••</span>{:else}{show(value ?? '', dc(c))}{/if}</span>{#if linked[dc(c)] && value !== null && onfollow}<span class="fk-go" aria-hidden="true"><ArrowUpRight size={12} strokeWidth={2} /></span>{/if}{/if}
             </div>
+            {/if}
           {/each}
         </div>
       {/each}
     </div>
   </div>
 </div>
+{#if finding}
+  <div class="grid-find" role="search">
+    <Search size={13} strokeWidth={1.8} aria-hidden="true" />
+    <input bind:this={findInput} bind:value={needle} placeholder={m.grid_find()} aria-label={m.grid_find()} onkeydown={findKey} />
+    <span class="grid-find-n" aria-live="polite">{needle.trim() ? (hits.length ? `${hitAt + 1}/${hits.length}${hits.length >= MAX_HITS ? '+' : ''}` : m.grid_find_none()) : ''}</span>
+    <button class="icon-btn" type="button" aria-label={m.grid_find_prev()} data-tip={m.grid_find_prev()} disabled={!hits.length} onclick={() => goHit(hitAt - 1)}><ChevronUp size={14} strokeWidth={1.8} /></button>
+    <button class="icon-btn" type="button" aria-label={m.grid_find_next()} data-tip={m.grid_find_next()} disabled={!hits.length} onclick={() => goHit(hitAt + 1)}><ChevronDown size={14} strokeWidth={1.8} /></button>
+    <button class="icon-btn" type="button" aria-label={m.grid_find_close()} onclick={closeFind}><X size={14} strokeWidth={1.8} /></button>
+  </div>
+{/if}
+</div>
 
 <style>
+  .grid-wrap {
+    position: relative;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+  }
+  .grid-find {
+    position: absolute;
+    top: 4px;
+    right: 18px;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 4px 3px 9px;
+    border: 1px solid var(--nd-rule);
+    border-radius: var(--nd-radius);
+    background: var(--nd-raised);
+    color: var(--nd-ink-2);
+    box-shadow: 0 4px 14px rgb(var(--nd-shade) / 0.18);
+  }
+  .grid-find input {
+    width: 180px;
+    border: 0;
+    outline: none;
+    background: none;
+    font: 400 12.5px var(--nd-font-ui);
+    color: var(--nd-ink);
+  }
+  .th-mask {
+    display: inline-grid;
+    place-items: center;
+    align-self: center;
+    flex: none;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--nd-ink-3);
+    cursor: var(--nd-cur-pointer, pointer);
+  }
+  .th-mask:hover,
+  .th-mask[aria-pressed='true'] {
+    color: var(--nd-accent-text);
+  }
+  .masked {
+    color: var(--nd-ink-3);
+    letter-spacing: 0.1em;
+  }
+  .grid-find-n {
+    min-width: 56px;
+    font: 400 11px var(--nd-font-mono);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: var(--nd-ink-3);
+  }
+  .td.hit {
+    background-image: linear-gradient(color-mix(in srgb, var(--nd-warn) 24%, transparent), color-mix(in srgb, var(--nd-warn) 24%, transparent));
+  }
+  .td.hit-on {
+    background-image: linear-gradient(color-mix(in srgb, var(--nd-warn) 48%, transparent), color-mix(in srgb, var(--nd-warn) 48%, transparent));
+  }
   .grid {
     --sel-tint: color-mix(in srgb, var(--nd-focus) 10%, transparent);
     position: relative;
@@ -901,6 +1203,37 @@
   .th-type {
     font: 400 10.5px var(--nd-font-mono);
     color: var(--nd-ink-3);
+  }
+  .th.frozen,
+  .td.frozen {
+    position: sticky;
+    z-index: 1;
+  }
+  .th.frozen {
+    background: var(--nd-surface-2);
+  }
+  .td.frozen {
+    background-color: var(--nd-surface);
+  }
+  .tr.odd .td.frozen:not(.sel) {
+    background-color: color-mix(in srgb, var(--nd-ink) 2.2%, var(--nd-surface));
+  }
+  .th.edge,
+  .td.edge {
+    box-shadow: inset -2px 0 0 var(--nd-rule);
+  }
+  .th.moving {
+    opacity: 0.55;
+  }
+  .th-drop {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    width: 2px;
+    margin-left: -1px;
+    background: var(--nd-focus);
+    z-index: 3;
+    pointer-events: none;
   }
   .th-resize {
     position: absolute;

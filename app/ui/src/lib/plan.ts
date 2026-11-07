@@ -417,3 +417,23 @@ export function findingText(f: Finding): Text {
       };
   }
 }
+
+export interface PlanNews {
+  count: number;
+  since: number | null;
+  shapeAt: number | null;
+  warn: 'shape' | 'slower' | null;
+  ratio: number | null;
+}
+
+export function planNews(history: readonly { at: number | null; analyzed: boolean; total: number | null; shape_changed: boolean }[]): PlanNews {
+  const [now, before] = history;
+  const ratio = now && before && now.analyzed === before.analyzed && now.total !== null && before.total !== null && before.total > 0 ? now.total / before.total : null;
+  return {
+    count: history.length,
+    since: history.at(-1)?.at ?? null,
+    shapeAt: history.find((h) => h.shape_changed)?.at ?? null,
+    warn: now?.shape_changed ? 'shape' : ratio !== null && ratio > 1.5 ? 'slower' : null,
+    ratio,
+  };
+}

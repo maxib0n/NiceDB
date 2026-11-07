@@ -6,6 +6,7 @@
   import DdlDialog from './DdlDialog.svelte';
   import DataExportDialog from './DataExportDialog.svelte';
   import DataImportDialog from './DataImportDialog.svelte';
+  import DocumentImportDialog from './DocumentImportDialog.svelte';
   import { dynamoUi } from '../lib/dynamo-builder.svelte';
   import DynamoBuilder from './DynamoBuilder.svelte';
 </script>
@@ -18,6 +19,11 @@
 {#if toolsUi.import}
   {#key toolsUi.import}
     <DataImportDialog ask={toolsUi.import} onclose={() => (toolsUi.import = null)} />
+  {/key}
+{/if}
+{#if toolsUi.documents}
+  {#key toolsUi.documents}
+    <DocumentImportDialog ask={toolsUi.documents} onclose={() => (toolsUi.documents = null)} />
   {/key}
 {/if}
 {#if ddlUi.ask}

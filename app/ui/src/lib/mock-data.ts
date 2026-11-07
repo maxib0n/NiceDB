@@ -1,5 +1,6 @@
 import { ApiError, type ApplyOutcome, type AuditEntry, type Browse, type ChangeSet, type ConnectionProfile, type Page, type RunEvent, type RunRequest, type WriteAccess } from './api';
 import { gate } from './prodsafety';
+import { mockServer } from './mock-drivers';
 import { readPrefs } from './mock-notes';
 import type { Change_Deserialize as Change, Field_Deserialize as Field, Risk, RiskFound_Serialize as RiskFound } from './bindings';
 
@@ -112,9 +113,20 @@ export function dataMock(tables: Record<string, Gen>, profile: (sessionId: strin
     if (code) throw new ApiError({ code });
   }
 
-  function log(sessionId: string, sql: string, rows: number | null, error: string | null) {
-    audit.unshift({ id: audit.length + 1, connection_id: profile(sessionId)?.id ?? sessionId, database: sessionId.includes('@') ? sessionId.split('@')[1] ?? '' : 'gestionale', at: Date.now(), who: 'ada', sql, rows, error });
+  function log(sessionId: string, sql: string, rows: number | null, error: string | null, undo: AuditEntry["undo"] = null) {
+    const p = profile(sessionId);
+    const server = p ? mockServer(p.target).database : 'gestionale';
+    audit.unshift({ id: audit.length + 1, connection_id: p?.id ?? sessionId, database: sessionId.includes('@') ? sessionId.split('@')[1] ?? '' : server, at: Date.now(), who: 'ada', sql, rows, error, undo });
   }
+
+  const inverse = (set: ChangeSet): AuditEntry["undo"] => ({
+    ...set,
+    changes: [...set.changes].reverse().map((c): Change => {
+      if (c.kind === 'update') return { kind: 'update', key: c.key.map((k) => c.set.find((x) => x.column === k.column) ?? k), original: c.set, set: c.original };
+      if (c.kind === 'delete') return { kind: 'insert', values: c.original };
+      return { kind: 'delete', key: c.values, original: c.values };
+    }),
+  }) as unknown as AuditEntry['undo'];
 
   return {
     dataBrowse: async (_sessionId: string, b: Browse): Promise<Page> => {
@@ -225,7 +237,7 @@ export function dataMock(tables: Record<string, Gen>, profile: (sessionId: strin
           else s.rows.set(id, next);
         }
       }
-      log(sessionId, script.join(';\n'), set.changes.length, null);
+      log(sessionId, script.join(';\n'), set.changes.length, null, inverse(set));
       return { kind: 'applied', rows: set.changes.length, held: false };
     },
     writeAccess: async (sessionId: string) => access(sessionId),

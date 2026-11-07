@@ -6,12 +6,13 @@
   import { askExport, compareResult } from '../lib/tools.svelte';
   import { untrack } from 'svelte';
   import { driverMessage } from '../lib/api';
-  import type { CopyFormat } from '../lib/copy';
+  import { tableFromSql, type CopyFormat } from '../lib/copy';
+  import { layoutKey } from '../lib/grid-layout';
   import { num } from '../lib/format';
   import { planFor } from '../lib/plan.svelte';
   import { nextSort, type SortDir } from '../lib/sort';
   import { droppedNotice } from '../lib/session';
-  import { loadAll, rerunDropped, revive, sessionOf, sortResult, type ResultSet, type Tab } from '../lib/workspace.svelte';
+  import { databaseOf, loadAll, rerunDropped, revive, sessionOf, sortResult, type ResultSet, type Tab } from '../lib/workspace.svelte';
   import { m } from '../paraglide/messages';
   import Grid from './Grid.svelte';
   import Menu from './Menu.svelte';
@@ -291,6 +292,13 @@
       <DryRunView {tab} />
     {:else if tab.failure}
       <p class="results-error" role="alert">{tab.failure}</p>
+      {#if tx?.open && sid}
+        <div class="results-tx">
+          <span>{m.tx_open_actions()}</span>
+          <button class="btn" type="button" onclick={() => void rollbackTx(sid).then((ok) => ok && (tab.failure = null))}><Undo2 size={13} strokeWidth={1.8} aria-hidden="true" />{m.tx_rollback()}</button>
+          <button class="btn primary" type="button" disabled={tx.failed} onclick={() => void commitTx(sid).then((ok) => ok && (tab.failure = null))}><Check size={13} strokeWidth={2} aria-hidden="true" />{m.tx_commit()}</button>
+        </div>
+      {/if}
     {:else if tab.results.length === 0}
       <p class="results-empty">{tab.running ? m.results_running() : m.results_empty()}</p>
     {:else if showMessages || !current?.hasGrid}
@@ -316,7 +324,7 @@
       {#key current}<DocView result={current} {tab} />{/key}
     {:else}
       {#key current}
-        <Grid bind:this={grid} result={current} {dialect} {partial} summarize={summary?.stats ?? null} sort={current.sort} onsort={sortBy} unsortable={reason} onblocked={() => flash()} onfocus={(f) => (cell = f)} gridkey={(e) => valueKey(e, toggleValuePanel)} extra={[{ label: m.rows_compare_with(), icon: TOOL_ICON.rows, disabled: !comparable(current) || !sql, run: () => compareResult(tab, current.sql) }]} />
+        <Grid bind:this={grid} layout={layoutKey(tab.connectionId, databaseOf(tab), tableFromSql(current.sql))} result={current} {dialect} {partial} summarize={summary?.stats ?? null} sort={current.sort} onsort={sortBy} unsortable={reason} onblocked={() => flash()} onfocus={(f) => (cell = f)} gridkey={(e) => valueKey(e, toggleValuePanel)} extra={[{ label: m.rows_compare_with(), icon: TOOL_ICON.rows, disabled: !comparable(current) || !sql, run: () => compareResult(tab, current.sql) }]} />
       {/key}
       {#if withValue}
         {@const r = current}

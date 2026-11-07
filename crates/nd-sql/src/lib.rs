@@ -16,7 +16,7 @@ pub use dml::{
     count_change, count_key, generate, generators, invalid_value, is_binary, keyset, read_only,
     select, select_keys,
 };
-pub use estimate::{Preview, count_query, preview_query};
+pub use estimate::{Preview, Removal, RemovalKind, count_query, preview_query, removal};
 pub use params::{
     Filled, ParamError, ParamKind, ParamName, ParamValue, Placeholder, bind,
     literal as param_literal, placeholders,

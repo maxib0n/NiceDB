@@ -6,7 +6,8 @@ use rusqlite::{OptionalExtension, params};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::folders::{Table, next_position, sync_groups};
+use crate::folders::{Table, enum_parse, enum_str, next_position, sync_groups};
+use crate::{FolderMark, FolderTint};
 use crate::{Result, Store};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
@@ -78,7 +79,12 @@ pub struct ConnectionProfile {
     pub name: String,
     pub folder: Option<String>,
     pub environment: Environment,
-    pub color: Option<String>,
+    #[serde(default, deserialize_with = "crate::folders::lenient")]
+    #[specta(type = Option<FolderTint>)]
+    pub color: Option<FolderTint>,
+    #[serde(default, deserialize_with = "crate::folders::lenient")]
+    #[specta(type = Option<FolderMark>)]
+    pub mark: Option<FolderMark>,
     pub target: Target,
     #[serde(default)]
     pub session: SessionOptions,
@@ -103,6 +109,15 @@ pub struct HistoryEntry {
     pub error: Option<String>,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
+#[serde(rename_all = "lowercase")]
+pub enum HistoryOutcome {
+    #[default]
+    Any,
+    Ok,
+    Failed,
+}
+
 pub fn now_ms() -> i64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -112,25 +127,26 @@ pub fn now_ms() -> i64 {
 pub(crate) fn upsert(tx: &rusqlite::Connection, p: &ConnectionProfile) -> Result<()> {
     let position = next_position(tx, Table::Connections, p.folder.as_deref())?;
     tx.execute(
-        "INSERT INTO connections (id, name, folder_id, environment, color, target, session, position, created_at, updated_at, template, raw_fields)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10, ?11)
+        "INSERT INTO connections (id, name, folder_id, environment, color, target, session, position, created_at, updated_at, template, raw_fields, mark)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9, ?10, ?11, ?12)
          ON CONFLICT(id) DO UPDATE SET name = excluded.name,
            position = CASE WHEN folder_id IS excluded.folder_id THEN position ELSE excluded.position END,
            folder_id = excluded.folder_id, environment = excluded.environment, color = excluded.color,
            target = excluded.target, session = excluded.session, updated_at = excluded.updated_at,
-           template = excluded.template, raw_fields = excluded.raw_fields",
+           template = excluded.template, raw_fields = excluded.raw_fields, mark = excluded.mark",
         params![
             p.id,
             p.name,
             p.folder,
             p.environment.as_str(),
-            p.color,
+            enum_str(p.color),
             serde_json::to_string(&p.target)?,
             serde_json::to_string(&p.session)?,
             position,
             now_ms(),
             serde_json::to_string(&p.template)?,
-            serde_json::to_string(&p.raw_fields)?
+            serde_json::to_string(&p.raw_fields)?,
+            enum_str(p.mark)
         ],
     )?;
     Ok(())
@@ -138,7 +154,7 @@ pub(crate) fn upsert(tx: &rusqlite::Connection, p: &ConnectionProfile) -> Result
 
 fn read_all(conn: &rusqlite::Connection) -> Result<Vec<ConnectionProfile>> {
     let mut stmt = conn.prepare_cached(
-        "SELECT id, name, folder_id, environment, color, target, session, template, raw_fields FROM connections ORDER BY position, name COLLATE NOCASE",
+        "SELECT id, name, folder_id, environment, color, target, session, template, raw_fields, mark FROM connections ORDER BY position, name COLLATE NOCASE",
     )?;
     let rows = stmt.query_map([], |r| {
         Ok((
@@ -154,17 +170,19 @@ fn read_all(conn: &rusqlite::Connection) -> Result<Vec<ConnectionProfile>> {
                 r.get::<_, String>(6)?,
                 r.get::<_, String>(7)?,
                 r.get::<_, String>(8)?,
+                r.get::<_, Option<String>>(9)?,
             ),
         ))
     })?;
     rows.map(|row| {
-        let ((id, name, folder, env, color), (target, session, template, raw)) = row?;
+        let ((id, name, folder, env, color), (target, session, template, raw, mark)) = row?;
         Ok(ConnectionProfile {
             id,
             name,
             folder,
             environment: Environment::parse(&env),
-            color,
+            color: enum_parse(color),
+            mark: enum_parse(mark),
             target: serde_json::from_str(&target)?,
             session: serde_json::from_str(&session)?,
             template: serde_json::from_str(&template).unwrap_or_default(),
@@ -314,6 +332,16 @@ impl Store {
         query: &str,
         limit: u32,
     ) -> Result<Vec<HistoryEntry>> {
+        self.history_where(connection_id, query, HistoryOutcome::Any, limit)
+    }
+
+    pub fn history_where(
+        &self,
+        connection_id: Option<&str>,
+        query: &str,
+        outcome: HistoryOutcome,
+        limit: u32,
+    ) -> Result<Vec<HistoryEntry>> {
         let pattern = format!(
             "%{}%",
             query
@@ -324,9 +352,15 @@ impl Store {
         let mut stmt = self.conn.prepare_cached(
             "SELECT id, connection_id, sql, started_at, elapsed_ms, rows, error FROM history
              WHERE (?1 IS NULL OR connection_id = ?1) AND sql LIKE ?2 ESCAPE '\\'
+               AND (?4 = 0 OR (error IS NOT NULL) = (?4 = 2))
              ORDER BY started_at DESC, id DESC LIMIT ?3",
         )?;
-        stmt.query_map(params![connection_id, pattern, limit], |r| {
+        let outcome = match outcome {
+            HistoryOutcome::Any => 0,
+            HistoryOutcome::Ok => 1,
+            HistoryOutcome::Failed => 2,
+        };
+        stmt.query_map(params![connection_id, pattern, limit, outcome], |r| {
             Ok(HistoryEntry {
                 id: r.get(0)?,
                 connection_id: r.get(1)?,

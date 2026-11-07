@@ -22,10 +22,17 @@ export interface ImportAsk {
   table: { namespace: string; name: string } | null;
 }
 
-export const toolsUi = $state({ export: null as ExportAsk | null, import: null as ImportAsk | null, compareTarget: null as { tab: string; target: string } | null });
+export interface DocumentsAsk {
+  connectionId: string;
+  database: string;
+  collection: string;
+}
+
+export const toolsUi = $state({ documents: null as DocumentsAsk | null, export: null as ExportAsk | null, import: null as ImportAsk | null, compareTarget: null as { tab: string; target: string } | null });
 
 export const askExport = (a: ExportAsk) => (toolsUi.export = a);
 export const askImport = (a: ImportAsk) => (toolsUi.import = a);
+export const askImportDocuments = (a: DocumentsAsk) => (toolsUi.documents = a);
 
 export async function openTool(connectionId: string, tool: ToolKind) {
   await openConnection(connectionId);

@@ -15,7 +15,8 @@
   import { nextSort } from '../lib/sort';
   import { sqlOf } from '../lib/family';
   import { qualifiedName } from '../lib/sqlname';
-  import { changeDataView, discardChanges, newTab, sessionOf, type Tab } from '../lib/workspace.svelte';
+  import { changeDataView, databaseOf, discardChanges, newTab, sessionOf, type Tab } from '../lib/workspace.svelte';
+  import { layoutKey } from '../lib/grid-layout';
   import type { ForeignKey } from '../lib/bindings';
   import { m } from '../paraglide/messages';
   import AuditPanel from './AuditPanel.svelte';
@@ -536,7 +537,7 @@
       {#if picked}<ResultChart columns={picked.columns} rows={picked.rows} rev={0} key={`${chartKey}:picked`} name={info.name} />
       {:else}<ResultChart {columns} rows={pageRows} rev={d.offset} key={chartKey} name={info.name} partial={partial ? pageRows.length : 0} groups={totals?.groups ?? null} />{/if}
     {:else if d.page}
-      <Grid bind:this={gridView} result={grid} dialect={sqlOf(session.info)} {partial} summarize={totals?.stats ?? null} {edit} {sort} links={hasLinks ? links : undefined} onfollow={hasLinks ? follow : undefined} cellmenu={linkMenu} {onedit} editkey={(e) => picker?.key(e) ?? false} gridkey={(e) => valueKey(e, toggleValuePanel)} onsort={(c, add, dir) => changeDataView(tab, session.info, { order: nextSort(d.order, columns[c]?.name ?? '', add, dir) }, m.undo_sorted())} onfilter={filterBy} />
+      <Grid bind:this={gridView} layout={layoutKey(tab.connectionId, databaseOf(tab), info?.name ?? null)} result={grid} dialect={sqlOf(session.info)} {partial} summarize={totals?.stats ?? null} {edit} {sort} links={hasLinks ? links : undefined} onfollow={hasLinks ? follow : undefined} cellmenu={linkMenu} {onedit} editkey={(e) => picker?.key(e) ?? false} gridkey={(e) => valueKey(e, toggleValuePanel)} onsort={(c, add, dir) => changeDataView(tab, session.info, { order: nextSort(d.order, columns[c]?.name ?? '', add, dir) }, m.undo_sorted())} onfilter={filterBy} />
       {#if grid.count === 0}<p class="dv-none">{m.data_no_rows()}</p>{/if}
     {:else}
       <p class="dv-empty">{m.data_loading()}</p>
@@ -546,7 +547,7 @@
   {#if side === 'value'}
     <ValuePanel {columns} count={grid.count} focus={cell} at={cellAt} rowLabel={(r) => edit.label(r)} dialect={session.info.dialect ?? null} mode={valuePane.mode} lock={cellLock} commit={cellCommit} onmove={(r, c) => gridView?.select(r, c)} onmode={(mode) => (valuePane.mode = mode)} onclose={() => toggleValuePanel(valuePane.mode)} />
   {:else if d.showAudit}
-    <AuditPanel connectionId={tab.connectionId} rev={d.auditRev} onclose={() => (d.showAudit = false)} />
+    <AuditPanel connectionId={tab.connectionId} rev={d.auditRev} onclose={() => (d.showAudit = false)} onundone={() => void d.reload(session.info, d.offset)} />
   {:else if d.showRelated && info}
     <RelatedPanel session={session.info} schema={session.schema} {info} row={relatedRow} label={relatedAt === null ? null : m.fk_row({ n: edit.label(relatedAt) })} onfollow={(t, q, elsewhere) => void go(t, q, elsewhere)} onclose={() => (d.showRelated = false)} />
   {/if}

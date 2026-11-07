@@ -167,15 +167,16 @@ export async function settleBeforeClosing(list: Waiting[], reason: CloseReason):
   return true;
 }
 
-export function guardWindowClose(list: () => Waiting[]) {
+export function guardWindowClose(list: () => Waiting[], save: () => Promise<void>) {
   if (!inTauri) return;
   void import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
     const win = getCurrentWindow();
     void win.onCloseRequested(async (e) => {
-      const open = list();
-      if (!open.length) return;
       e.preventDefault();
-      if (await settleBeforeClosing(open, 'app')) await win.destroy();
+      const open = list();
+      if (open.length && !(await settleBeforeClosing(open, 'app'))) return;
+      await save().catch(() => {});
+      await win.destroy();
     });
   });
 }

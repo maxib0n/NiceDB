@@ -14,7 +14,7 @@ export const CLUSTER_DEMO: ConnectionProfile[] =
           name: 'Cache — cluster',
           folder: null,
           environment: 'development',
-          color: null,
+          color: null, mark: null,
           session: DEFAULT_SESSION,
           template: { kind: 'none' },
           raw_fields: {},

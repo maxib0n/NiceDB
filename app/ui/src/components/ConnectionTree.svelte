@@ -4,7 +4,8 @@
   import { openTool } from '../lib/tools.svelte';
   import { tick } from 'svelte';
   import type { ConnectionProfile } from '../lib/api';
-  import { connections, type EditMode } from '../lib/connections.svelte';
+  import { connections, setLook, type EditMode } from '../lib/connections.svelte';
+  import type { FolderMark, FolderTint } from '../lib/bindings';
   import { connectionUrl } from '../lib/connurl';
   import { copyText, keys, openMenu, type MenuEntry } from '../lib/contextmenu.svelte';
   import { driverOf as markOf } from '../lib/drivers';
@@ -100,6 +101,7 @@
       { label: m.conn_duplicate(), icon: ICON.duplicate, run: () => onedit(c, 'copy') },
       { label: m.conn_copy_url(), icon: ICON.copyUrl, hint: m.conn_copy_url_hint(), run: () => copyText(connectionUrl(c)) },
       'separator',
+      ...lookMenu(c.color, c.mark, (patch) => setLook(c, { ...('tint' in patch ? { color: patch.tint ?? null } : {}), ...('mark' in patch ? { mark: patch.mark ?? null } : {}) })),
       { label: m.org_move_to(), icon: FolderInput, items: moveMenu(node) },
       ...shiftItems(node),
       { label: m.org_spaces(), icon: Layers, items: spacesMenu(node) },
@@ -115,6 +117,21 @@
     orgUi.renaming = f.id;
   }
 
+  function lookMenu(tint: FolderTint | null, mark: FolderMark | null, set: (patch: { tint?: FolderTint | null; mark?: FolderMark | null }) => unknown): MenuEntry[] {
+    return [
+      {
+        label: m.org_tint(),
+        icon: Palette,
+        items: [{ label: m.org_none(), icon: CircleOff, disabled: !tint, run: () => set({ tint: null }) }, 'separator', ...TINTS.map((t) => ({ label: t.label(), icon: tintIcon(t.id), hint: tint === t.id ? '✓' : undefined, run: () => set({ tint: t.id }) }))],
+      },
+      {
+        label: m.org_mark(),
+        icon: Bookmark,
+        items: [{ label: m.org_none(), icon: CircleOff, disabled: !mark, run: () => set({ mark: null }) }, 'separator', ...MARKS.map((x) => ({ label: x.label(), icon: x.icon, hint: mark === x.id ? '✓' : undefined, run: () => set({ mark: x.id }) }))],
+      },
+    ];
+  }
+
   function folderMenu(e: MouseEvent | { x: number; y: number }, f: FolderT) {
     const node: TreeNode = { kind: 'folder', id: f.id };
     openMenu(e, [
@@ -122,16 +139,7 @@
       { label: m.org_subfolder(), icon: FolderPlus, run: () => newSubfolder(f.id) },
       'separator',
       { label: m.org_rename(), icon: PenLine, shortcut: 'F2', run: () => (orgUi.renaming = f.id) },
-      {
-        label: m.org_tint(),
-        icon: Palette,
-        items: [{ label: m.org_none(), icon: CircleOff, disabled: !f.tint, run: () => updateFolder(f.id, { tint: null }) }, 'separator', ...TINTS.map((t) => ({ label: t.label(), icon: tintIcon(t.id), hint: f.tint === t.id ? '✓' : undefined, run: () => updateFolder(f.id, { tint: t.id }) }))],
-      },
-      {
-        label: m.org_mark(),
-        icon: Bookmark,
-        items: [{ label: m.org_none(), icon: CircleOff, disabled: !f.mark, run: () => updateFolder(f.id, { mark: null }) }, 'separator', ...MARKS.map((x) => ({ label: x.label(), icon: x.icon, hint: f.mark === x.id ? '✓' : undefined, run: () => updateFolder(f.id, { mark: x.id }) }))],
-      },
+      ...lookMenu(f.tint, f.mark, (patch) => updateFolder(f.id, patch)),
       'separator',
       { label: m.org_move_to(), icon: FolderInput, items: moveMenu(node) },
       ...shiftItems(node),
@@ -338,6 +346,7 @@
     {:else}
       {@const c = r.conn}
       {@const s = sessionFor(c.id)}
+      {@const Own = markIcon(c.mark)}
       {@const opening = !!workspace.opening[c.id]}
       {@const failed = workspace.openErrors[c.id]}
       <div
@@ -349,6 +358,7 @@
         class:dragged={dragged(r)}
         data-row={i}
         data-conn={c.id}
+        data-tint={c.color ?? undefined}
         style:--depth={r.depth}
         role="listitem"
         oncontextmenu={(e) => connectionMenu(e, c)}
@@ -356,7 +366,7 @@
       >
         <button class="conn-main" type="button" aria-expanded={s ? !!explorer.open[connKey(c.id)] : undefined} onclick={(e) => clickRow(r, e)} onkeydown={(e) => rowKey(e, r)} data-tip={failed ? `${m.conn_open_failed()}: ${failed.message}` : isModel(c) ? `${c.name} — ${m.model_open_hint()}` : c.name}>
           <span class="conn-chev" class:open={!!s && !!explorer.open[connKey(c.id)]} class:none={!s} aria-hidden="true"><ChevronRight size={13} strokeWidth={1.9} /></span>
-          <span class="conn-mark"><DriverMark driver={driverOf(c)} size={16} /></span>
+          <span class="conn-mark" class:own={!!Own || !!c.color}>{#if Own}<Own size={15} strokeWidth={1.7} />{:else}<DriverMark driver={driverOf(c)} size={16} />{/if}</span>
           <span class="conn-name">{c.name}</span>
           {#if opening}<span class="conn-state busy" aria-label={m.conn_connecting()}></span>
           {:else if failed}<span class="conn-state down" aria-label={m.conn_open_failed()}></span>

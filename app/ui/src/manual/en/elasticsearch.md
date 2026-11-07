@@ -34,6 +34,9 @@ In OpenSearch SQL names with dashes or reserved words go in backticks (`` `order
 ## Editing documents
 Documents of a `_search` that does not filter the `_source` are edited by `_id`, in the index they come from (also when searching an alias). **Save** writes the document again if it is still there, **Insert** creates it, **Delete** removes it; after each write the index refreshes before answering. In production everything goes through the write gate and lands in the audit log as a request.
 
+## Import from a file
+Right-click an index › **Import documents…**: an `_id` in the document becomes its id, the others get one from the server. See [Import and export](import-export).
+
 ## Writes and production
 `GET`, `HEAD` and the read-only `POST`s (`_search`, `_count`, `_msearch`, `_explain`, `_validate`, `_sql`…) read; the rest writes. Deleting an index, `_delete_by_query` or `_update_by_query` on every document, `_close` and cluster settings ask for confirmation as risky. [[key:cancel]] also cancels the running request on the server.
 

@@ -49,7 +49,34 @@ For a few rows the grid is enough: right-click › **Copy as** › **Text with h
 - At the end: “Imported 12,400 rows into customers in 3 s”, plus the **Rejected rows** with line number and reason (the first 500).
 - On a production connection the dialog shows the write switch and the import asks for the confirmation chosen in Settings: see [Production safety](production).
 
-## Hand connections to a colleague
+## Import documents from a file
+For MongoDB, Elasticsearch and DynamoDB: right-click a collection, an index or a table › **Import documents…**, or the "Import documents…" command in [[key:palette]].
+1. **Choose a file…**: a JSON array, one document per line (NDJSON, JSON Lines, the output of `mongoexport`) or documents one after another, in `.json`, `.ndjson` or `.jsonl` files.
+2. NiceDB reads the whole file and says how many documents it holds, shows the first twenty ([[←]] and [[→]] in the window) and lists the lines it cannot read.
+3. Check the name of the collection, index or table: a new name creates the collection on MongoDB and the index on Elasticsearch; on DynamoDB the table must exist.
+4. **Skip and go on** leaves out refused documents and lists them with their line; **Stop at the first error** stops there.
+5. **Import N documents**. On a production connection it needs the unlock and the connection name, like any write.
+
+Extended JSON (`$oid`, `$date`, `$numberLong`, `$numberDecimal`…) becomes the right type on MongoDB. There is no transaction: documents are written in blocks of 500 and the ones already written stay even if you stop or cancel. On MongoDB a block goes to the server in one go; on Elasticsearch and DynamoDB one document per request, slower. The import goes into the write log.
+
+## From the command line
+`nicedb run` runs a SQL file on a connection saved in NiceDB and writes the results as CSV, without opening the window. It uses the app's connections and the keychain's passwords: they are not written anywhere.
+
+```
+nicedb run --conn "Observatory — staging" report.sql > report.csv
+echo "select count(*) from stars" | nicedb run --conn "Observatory — staging" --tsv -
+```
+
+| Option | Effect |
+|---|---|
+| `--conn` | the connection, by its name in NiceDB (or its id) |
+| `--db` | another database of the same server |
+| `--csv`, `--tsv` | comma-separated (the default) or tab-separated |
+| `--confirm "name"` | on a production connection opens writes and confirms them with the connection's name |
+| `--risky` | also runs risky statements (`DROP`, `TRUNCATE`, `DELETE` without `WHERE`…) |
+
+Each statement that returns rows produces a block with its header, separated from the next by a blank line; rows touched and errors go to standard error. It exits with 0 when everything ran, 1 when a statement failed, 2 when the command was wrong. Writes go into the write log like the app's. On Windows the output shows when redirected to a file or another command.
+
 An **Encrypted package** (`.nicedb`) carries folders, connections and, optionally, more, protected by a passphrase.
 
 1. In the sidebar, **More actions** (the three dots) › **Export…** for the whole current workspace; or right-click a folder or a connection › **Export…**.

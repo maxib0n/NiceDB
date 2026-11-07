@@ -21,6 +21,8 @@ import { pending } from './tx';
 import { paramsOf, paramsForRun, refreshParams } from './params.svelte';
 import { nameLabel } from './params';
 import { prefs } from './prefs.svelte';
+import { effectLines, type Effect } from './impact';
+import { effectsOf } from './impact.svelte';
 
 export type Row = (string | null)[];
 
@@ -144,8 +146,11 @@ export class Tab {
   dropped = $state.raw<Dropped | null>(null);
   dry = $state(false);
   notice = $state<string | null>(null);
+  effects = $state.raw<Effect[]>([]);
   lastScope: RunScope | null = null;
   readonly data = new DataTab();
+  file = $state.raw<{ path: string; name: string } | null>(null);
+  savedText = $state<string | null>(null);
 
   constructor(connectionId: string, title: string, text = '') {
     this.connectionId = connectionId;
@@ -156,6 +161,10 @@ export class Tab {
 
   get running() {
     return this.runId !== null;
+  }
+
+  get unsaved() {
+    return this.file !== null && this.text !== this.savedText;
   }
 }
 
@@ -192,6 +201,7 @@ export const workspace = $state({
   split: 0.45,
   widths: {} as Widths,
   epoch: 0,
+  runs: 0,
 });
 
 export const activeTab = () => workspace.tabs.find((t) => t.id === workspace.active) ?? null;
@@ -453,11 +463,29 @@ export type Parked = { tab: Tab; index: number }[];
 export const parkAll = (list: Tab[]): Parked => list.map((tab) => ({ tab, index: workspace.tabs.indexOf(tab) }));
 
 export async function putBack(parked: Parked, active: string | null) {
+  const gone = parked.filter(({ tab }) => !workspace.tabs.includes(tab));
   const tabs = [...workspace.tabs];
-  for (const { tab, index } of [...parked].sort((a, b) => a.index - b.index)) tabs.splice(Math.min(index, tabs.length), 0, tab);
+  for (const { tab, index } of [...gone].sort((a, b) => a.index - b.index)) tabs.splice(Math.min(index, tabs.length), 0, tab);
   workspace.tabs = tabs;
   if (active && tabs.some((t) => t.id === active)) workspace.active = active;
-  for (const { tab } of parked) await ensureSession(tab.connectionId, tab.database);
+  for (const { tab } of gone) await ensureSession(tab.connectionId, tab.database);
+}
+
+const CLOSED_KEPT = 20;
+const closed: { parked: Parked; epoch: number }[] = [];
+
+export const canReopen = () => closed.some((c) => c.epoch === workspace.epoch && c.parked.some(({ tab }) => !workspace.tabs.includes(tab)));
+
+export async function reopenClosed() {
+  while (closed.length) {
+    const last = closed.pop();
+    if (!last || last.epoch !== workspace.epoch) continue;
+    const parked = last.parked.filter(({ tab }) => !workspace.tabs.includes(tab));
+    if (!parked.length) continue;
+    await putBack(parked, parked.at(-1)?.tab.id ?? null);
+    return true;
+  }
+  return false;
 }
 
 export async function closeTabs(list: Tab[], label?: string) {
@@ -468,6 +496,8 @@ export async function closeTabs(list: Tab[], label?: string) {
   const epoch = workspace.epoch;
   await removeTabs(list);
   for (const t of list) park(t);
+  closed.push({ parked, epoch });
+  if (closed.length > CLOSED_KEPT) closed.shift();
   record({
     label: label ?? (list.length === 1 ? m.undo_tab_closed() : m.undo_tabs_closed({ count: list.length })),
     toast: true,
@@ -584,6 +614,9 @@ export function apply(tab: Tab, e: RunEvent) {
     case 'transaction_lost':
       tab.notice = m.tx_lost_before();
       break;
+    case 'dry_run_dropped':
+      tab.notice = m.tx_dry_dropped();
+      break;
     case 'transaction': {
       const s = sessionOf(tab);
       if (s) setTx(s.info.session_id, e.state);
@@ -686,6 +719,7 @@ export async function run(tab: Tab, scope: RunScope, dryRun = false, keepGoing =
   tab.dropped = null;
   tab.dry = dryRun;
   tab.notice = null;
+  tab.effects = dryRun ? await effectsOf(s, tab.text, scope) : [];
   const runId = crypto.randomUUID();
   tab.runId = runId;
   tab.results = [];
@@ -700,7 +734,9 @@ export async function run(tab: Tab, scope: RunScope, dryRun = false, keepGoing =
         await api.run({ run_id: runId, session_id: s.info.session_id, text: tab.text, scope, confirm, dry_run: dryRun, params, continue_on_error: keepGoing }, (e) => apply(tab, e));
         break;
       } catch (e) {
-        const next = e instanceof ApiError ? await confirmRun(s.info, e, confirm) : null;
+        const asking = e instanceof ApiError && (e.error.code === 'risky' || e.error.code === 'needs_confirmation');
+        const extra = asking ? effectLines(tab.effects.length ? tab.effects : await effectsOf(s, tab.text, scope), true) : [];
+        const next = e instanceof ApiError ? await confirmRun(s.info, e, confirm, extra) : null;
         if (next === false) {
           tab.failure = m.run_not_confirmed();
           asked = true;
@@ -720,6 +756,7 @@ export async function run(tab: Tab, scope: RunScope, dryRun = false, keepGoing =
     }
   } finally {
     tab.runId = null;
+    workspace.runs++;
     if (s.info.environment === 'production') void settle(s.info.session_id);
     if (!asked) soundOf(tab);
     if (params) void refreshParams(tab.id, tab.text, sqlOf(s.info), scope);
@@ -747,7 +784,7 @@ const RISK = {
   full_scan: m.risk_full_scan,
 };
 
-export async function confirmRun(info: SessionInfo, e: ApiError, confirm: RunConfirm_Deserialize): Promise<RunConfirm_Deserialize | null | false> {
+export async function confirmRun(info: SessionInfo, e: ApiError, confirm: RunConfirm_Deserialize, extra: string[] = []): Promise<RunConfirm_Deserialize | null | false> {
   const production = info.environment === 'production';
   const code = e.error.code;
   if (code !== 'risky' && code !== 'needs_confirmation') return null;
@@ -757,7 +794,7 @@ export async function confirmRun(info: SessionInfo, e: ApiError, confirm: RunCon
     title: production ? m.confirm_run_prod() : m.confirm_run(),
     connection: connections.list.find((c) => c.id === info.connection_id)?.name ?? '',
     production,
-    lines: risks.map((r) => RISK[r.risk]()),
+    lines: [...risks.map((r) => RISK[r.risk]()), ...extra],
     risks,
     note: production ? m.confirm_writes() : '',
     action: production ? m.confirm_run_prod_btn() : m.confirm_run_btn(),

@@ -107,6 +107,11 @@ Le password scritte nello SQL (`PASSWORD '…'`, `IDENTIFIED BY …`, `AUTH` di 
 
 Il pannello mostra le ultime 200 scritture della connessione; l'esportazione le contiene tutte.
 
+### Ripristinare i valori di prima
+Le modifiche applicate dalla vista **Dati** hanno **Ripristina…**: NiceDB ricorda i valori che le righe avevano e prepara le istruzioni inverse (una modifica rimette il valore vecchio, una riga cancellata torna, una riga aggiunta se ne va), le mostra nella finestra di conferma e le esegue in una transazione, con lo stesso sblocco e la stessa conferma di ogni scrittura. Ogni istruzione deve toccare una sola riga: se una riga è cambiata da allora, il ripristino si ferma e non tocca niente. Il ripristino stesso finisce nel registro e si può ripristinare a sua volta.
+
+Le altre scritture sono segnate **non ripristinabile**: lo SQL scritto nell'editor, importazioni, documenti, chiavi e comandi degli strumenti non conservano i valori di prima. Una riga aggiunta con una chiave generata dal database si ripristina cercandola con i valori scritti: se ce n'è più d'una uguale, il ripristino si ferma.
+
 ## Limiti
 - Con il commit manuale, sbloccare la scrittura chiude una transazione aperta che non ha ancora scritto: era nata in sola lettura.
 - Il registro sta sul computer, nel database locale di NiceDB: non è un registro di controllo del server e non vede le scritture fatte da altri programmi.

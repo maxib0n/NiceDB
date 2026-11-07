@@ -25,7 +25,7 @@ export const CLICKHOUSE_DEMO: ConnectionProfile[] = params().has('clickhouse')
         name: 'Analisi vendite',
         folder: null,
         environment: params().get('clickhouse') === 'prod' ? 'production' : 'development',
-        color: null,
+        color: null, mark: null,
         session: DEFAULT_SESSION,
         template: { kind: 'none' },
         raw_fields: {},

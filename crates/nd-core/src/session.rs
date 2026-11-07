@@ -515,7 +515,7 @@ impl Core {
         let lowered = self.admit_environment(profile, confirm)?;
         self.store(|s| s.save_connection(profile))?;
         if let Some(line) = lowered {
-            self.audit_as(&profile.id, String::new(), &line, None, None);
+            self.audit_as(&profile.id, String::new(), &line, None, None, None);
         }
         for session in Self::lock(&self.sessions)?
             .values()
@@ -578,7 +578,7 @@ impl Core {
         let lowered = self.admit_environment(profile, confirm)?;
         self.store(|s| s.save_connection(profile))?;
         if let Some(line) = lowered {
-            self.audit_as(&profile.id, String::new(), &line, None, None);
+            self.audit_as(&profile.id, String::new(), &line, None, None, None);
         }
         Self::lock(&self.trashed)?.remove(&profile.id);
         Ok(())

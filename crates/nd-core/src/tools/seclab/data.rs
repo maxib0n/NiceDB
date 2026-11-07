@@ -134,6 +134,15 @@ fn matches(kind: Kind, v: &str) -> bool {
     }
 }
 
+pub fn sensitive_kind(name: &str, values: &[&str]) -> Option<&'static str> {
+    let kind = kind_of_name(name)?;
+    let mut seen = values.iter().filter(|v| !v.trim().is_empty()).peekable();
+    if seen.peek().is_none() {
+        return Some(kind.tag());
+    }
+    seen.any(|v| matches(kind, v)).then_some(kind.tag())
+}
+
 struct Column {
     schema: String,
     table: String,

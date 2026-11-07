@@ -3,7 +3,7 @@ import type { Preferences } from './api';
 
 export const defaultPreferences: Preferences = {
   editor: { font_size: 13, tab_width: 2, autocomplete: true, uppercase_keywords: true, inspections: true, continue_on_error: false },
-  results: { row_cap: 2_000_000, null_display: 'null', dates: 'raw', numbers: 'raw', monitor_ms: 5000 },
+  results: { row_cap: 2_000_000, null_display: 'null', dates: 'raw', numbers: 'raw', monitor_ms: 5000, mask_sensitive: false },
   safety: { timeout_local: 0, timeout_development: 0, timeout_staging: 300, timeout_production: 60, unlock_minutes: 10, unlock_mode: 'timed', confirm_mode: 'typed' },
   keys: {},
   drivers: { db2_clidriver: '' },

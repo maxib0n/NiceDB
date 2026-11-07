@@ -1,4 +1,5 @@
 mod about;
+pub mod cli;
 mod commands;
 mod error;
 mod library;
@@ -15,6 +16,36 @@ use nd_store::Store;
 use tauri::Manager;
 
 pub use commands::builder;
+
+pub fn cli_main(args: &[String]) -> i32 {
+    if let Some((status, text)) = cli::usage(args) {
+        eprintln!("{text}");
+        return status;
+    }
+    let input = if args.last().is_some_and(|a| a == "-") {
+        std::io::read_to_string(std::io::stdin()).unwrap_or_default()
+    } else {
+        String::new()
+    };
+    let core = match cli::open_core() {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("nicedb run: {e}");
+            return 1;
+        }
+    };
+    let Ok(rt) = tokio::runtime::Runtime::new() else {
+        eprintln!("nicedb run: no async runtime");
+        return 1;
+    };
+    rt.block_on(cli::run(
+        &core,
+        args,
+        &input,
+        &mut std::io::stdout(),
+        &mut std::io::stderr(),
+    ))
+}
 
 pub fn run() {
     tracing_subscriber::fmt()
@@ -119,7 +150,7 @@ fn navigation_guard<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
 }
 
 #[cfg(unix)]
-fn keep_private(dir: &std::path::Path) -> std::io::Result<()> {
+pub(crate) fn keep_private(dir: &std::path::Path) -> std::io::Result<()> {
     use std::os::unix::fs::PermissionsExt as _;
     std::fs::set_permissions(dir, std::fs::Permissions::from_mode(0o700))?;
     for name in ["updater.json", "known_hosts"] {
@@ -132,6 +163,6 @@ fn keep_private(dir: &std::path::Path) -> std::io::Result<()> {
 }
 
 #[cfg(not(unix))]
-fn keep_private(_dir: &std::path::Path) -> std::io::Result<()> {
+pub(crate) fn keep_private(_dir: &std::path::Path) -> std::io::Result<()> {
     Ok(())
 }

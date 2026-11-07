@@ -8,7 +8,10 @@ import type { ActionId } from './shortcuts';
 import { type ToolKind } from './tools';
 import { hasTool, viewsOf } from './family';
 import { redo, undo } from './undo.svelte';
-import { cancel, closeConnection, closeTab, databaseOf, newTab, refreshSchema, run, sessionOf, type Tab, type View } from './workspace.svelte';
+import { openSqlFile, saveSqlFile } from './sqlfile.svelte';
+import { askImportDocuments } from './tools.svelte';
+import { presentation, togglePresentation } from './presentation.svelte';
+import { canReopen, cancel, closeConnection, closeTab, databaseOf, newTab, refreshSchema, reopenClosed, run, sessionOf, type Tab, type View } from './workspace.svelte';
 
 export interface QueryEditor {
   runScope: (all: boolean) => RunScope;
@@ -30,6 +33,8 @@ export function appCommands(hooks: { settings: () => void; newConnection: () => 
     { id: 'app.new_connection', label: m.conn_new, group: app, run: hooks.newConnection },
     { id: 'app.undo', label: m.key_undo, group: app, keys: () => 'Mod+Z', run: () => undo() },
     { id: 'app.redo', label: m.key_redo, group: app, keys: () => 'Shift+Mod+Z', run: () => redo() },
+    { id: 'app.presentation', label: () => (presentation.on ? m.pal_cmd_presentation_off() : m.pal_cmd_presentation_on()), group: app, keys: bound('presentation'), run: () => togglePresentation() },
+    { id: 'tab.reopen', label: m.key_reopen_tab, group: m.pal_group_connection, keys: bound('reopen_tab'), when: canReopen, run: () => void reopenClosed() },
     { id: 'app.sounds', label: () => (appearance.value.sounds ? m.pal_cmd_sounds_off() : m.pal_cmd_sounds_on()), group: app, run: () => updateAppearance({ sounds: !appearance.value.sounds }) },
     { id: 'app.sounds_detail', label: () => (appearance.value.sound_detail === 'reduced' ? m.pal_cmd_sounds_all() : m.pal_cmd_sounds_reduced()), group: app, when: () => appearance.value.sounds, run: () => updateAppearance({ sound_detail: appearance.value.sound_detail === 'reduced' ? 'all' : 'reduced' }) },
     { id: 'app.sound_timbre', label: () => (appearance.value.sound_timbre === 'ciotola' ? m.pal_cmd_timbre_marimba() : m.pal_cmd_timbre_ciotola()), group: app, when: () => appearance.value.sounds, run: () => updateAppearance({ sound_timbre: appearance.value.sound_timbre === 'ciotola' ? 'marimba' : 'ciotola' }) },
@@ -89,6 +94,19 @@ export function workspaceCommands(ctx: { tab: () => Tab | null; editor: () => Qu
     { id: 'panel.snippets', label: m.pal_cmd_snippets, group: m.pal_group_panels, run: showPanel('snippets') },
     { id: 'panel.history', label: m.key_panel_history, group: m.pal_group_panels, keys: bound('panel_history'), when: inQuery, run: toggleHistory },
     { id: 'tab.new', label: m.tab_new, group: m.pal_group_connection, keys: bound('new_tab'), run: withTab((t) => newTab(t.connectionId)) },
+    { id: 'file.open', label: m.key_open_file, group: m.pal_group_connection, keys: bound('open_file'), when: () => !!ctx.tab(), run: withTab((t) => openSqlFile(t.connectionId)) },
+    { id: 'file.save', label: m.key_save_file, group: q, keys: bound('save_file'), when: inQuery, run: withTab((t) => saveSqlFile(t)) },
+    { id: 'file.save_as', label: m.key_save_file_as, group: q, keys: bound('save_file_as'), when: inQuery, run: withTab((t) => saveSqlFile(t, true)) },
+    {
+      id: 'data.import_documents',
+      label: m.doc_import_dots,
+      group: m.pal_group_tools,
+      when: () => {
+        const c = caps();
+        return !!c?.editable && ['mql', 'search', 'partiql'].includes(c.language.kind);
+      },
+      run: withTab((t) => askImportDocuments({ connectionId: t.connectionId, database: databaseOf(t) ?? '', collection: '' })),
+    },
     { id: 'tab.close', label: m.tab_close, group: m.pal_group_connection, run: withTab((t) => closeTab(t.id)) },
     { id: 'schema.refresh', label: m.schema_refresh, group: m.pal_group_connection, run: withTab((t) => refreshSchema(t.connectionId, t.database)) },
     { id: 'connection.close', label: m.conn_disconnect, group: m.pal_group_connection, run: withTab((t) => closeConnection(t.connectionId)) },

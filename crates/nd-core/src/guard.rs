@@ -307,7 +307,7 @@ impl Core {
                 .filter(|c| c.environment == Environment::Production)
                 .map(|c| c.id);
             for id in ids {
-                self.audit_as(&id, String::new(), &line, None, None);
+                self.audit_as(&id, String::new(), &line, None, None, None);
             }
         }
         Ok(saved)
@@ -372,12 +372,24 @@ impl Core {
         rows: Option<u64>,
         error: Option<String>,
     ) {
+        self.audit_undoable(session, sql, rows, error, None);
+    }
+
+    pub(crate) fn audit_undoable(
+        &self,
+        session: &Session,
+        sql: &str,
+        rows: Option<u64>,
+        error: Option<String>,
+        undo: Option<nd_sql::ChangeSet>,
+    ) {
         self.audit_as(
             &session.connection_id,
             session.conn.server().database.clone(),
             sql,
             rows,
             error,
+            undo,
         );
     }
 
@@ -402,6 +414,7 @@ impl Core {
         sql: &str,
         rows: Option<u64>,
         error: Option<String>,
+        undo: Option<nd_sql::ChangeSet>,
     ) {
         let entry = AuditEntry {
             id: 0,
@@ -412,6 +425,7 @@ impl Core {
             sql: nd_sql::redact_secrets(sql, self.dialect_of(connection_id)).into_owned(),
             rows: rows.and_then(|r| i64::try_from(r).ok()),
             error,
+            undo,
         };
         if let Err(e) = self.store(|s| s.add_audit(&entry)) {
             tracing::warn!(error = %e, "audit entry not recorded");

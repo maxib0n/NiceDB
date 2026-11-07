@@ -827,6 +827,9 @@
 [data-style='listino'] .history > .field {
   margin: 6px;
 }
+[data-style='listino'] .history-filters {
+  margin: 0 6px 6px;
+}
 [data-style='listino'] .history ul {
   margin: 0;
 }

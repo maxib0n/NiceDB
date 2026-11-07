@@ -5,6 +5,7 @@ mod genprofiles;
 mod library;
 mod marks;
 mod migrations;
+mod plans;
 mod prefs;
 mod settings;
 mod transfer;
@@ -18,12 +19,13 @@ use rusqlite::Connection;
 
 pub use audit::AuditEntry;
 pub use connections::{
-    ConnectionProfile, Environment, HistoryEntry, SessionOptions, Template, now_ms,
+    ConnectionProfile, Environment, HistoryEntry, HistoryOutcome, SessionOptions, Template, now_ms,
 };
 pub use folders::{Folder, FolderMark, FolderTint, TreeNode};
 pub use genprofiles::{GenProfiles, GenSaved};
 pub use library::{NoteScope, ParamUse, SavedNote, Script, Snippet};
 pub use marks::{Mark, MarkTarget, Marks};
+pub use plans::{NewPlan, PLANS_KEPT, SavedPlan};
 pub use prefs::{
     ConfirmMode, DEFAULT_ROW_CAP, DateDisplay, DriverPrefs, EditorPrefs, NullDisplay,
     NumberDisplay, Preferences, ResultsPrefs, SafetyPrefs, UnlockMode,
@@ -39,7 +41,7 @@ pub use transfer::{
 pub use vars::{VarError, expand, lookup_in, names, resolve, secret_like, valid_name};
 pub use visibility::{PackedVisibility, Visibility};
 pub use workspaces::{
-    SavedDesign, SavedTab, SavedTable, TabView, Workspace, WorkspaceSession, Workspaces,
+    SavedDesign, SavedFile, SavedTab, SavedTable, TabView, Workspace, WorkspaceSession, Workspaces,
 };
 
 #[derive(Debug, thiserror::Error)]

@@ -41,10 +41,16 @@ La prova a secco esegue una scrittura in una transazione, mostra le righe toccat
 - Per un `UPDATE` i valori nuovi vengono da una prova dell'istruzione in un savepoint, annullata subito dopo: si vedono `now()`, i valori predefiniti e le colonne cambiate dai trigger. Dove non si può (DuckDB, libSQL remoto, tabelle senza chiave primaria o MyISAM) sono una stima e la scheda lo scrive sotto la tabella.
 - Gli `INSERT` mostrano le righe inserite su PostgreSQL, CockroachDB, SQLite, libSQL e DuckDB; su MySQL, MariaDB e SQL Server solo il conteggio.
 - Se un'istruzione fallisce, o la fermi con **Annulla**, la prova si annulla da sola.
+- Se esegui altro mentre la prova aspetta ancora **Commit** o **Rollback**, la prova si annulla prima e un avviso sopra i risultati lo dice: la nuova esecuzione passa dalle conferme di sempre.
 - La prova non chiede conferma per le istruzioni rischiose: le righe le vedi prima di confermare.
 - Su produzione la scrittura va sbloccata già per la prova, perché le righe vengono davvero toccate e bloccate fino alla chiusura; il nome della connessione si chiede al **Commit**.
 
-Non si possono provare a secco istruzioni di transazione (`BEGIN`, `COMMIT`…), istruzioni che il motore rifiuta in una transazione e, su MySQL e MariaDB, il DDL. Serve anche che non ci sia già una transazione aperta. In questi casi la prova non parte e la scheda dice quale istruzione la blocca.
+Non si possono provare a secco istruzioni di transazione (`BEGIN`, `COMMIT`…), istruzioni che il motore rifiuta in una transazione e, su MySQL e MariaDB, il DDL. Serve anche che non ci sia già una transazione aperta dall'editor: in quel caso il messaggio offre **Commit** e **Rollback** lì dove compare, come i pulsanti in alto a destra. Negli altri casi la prova non parte e la scheda dice quale istruzione la blocca.
+
+### Cosa toglierebbe
+Per `DELETE`, `TRUNCATE` e `DROP TABLE` la prova a secco apre con **Cosa toglierebbe**: quante righe sparirebbero da quella tabella e, per ogni tabella con una chiave esterna che la punta, quante righe la puntano e cosa succede loro: **cancellazione a catena** (`ON DELETE CASCADE`), **riferimento azzerato** (`SET NULL`) oppure **un riferimento che blocca la scrittura** (`RESTRICT` o nessuna azione: la scrittura fallirebbe). Le stesse righe compaiono nella conferma delle istruzioni rischiose e in quella della produzione, anche per `TRUNCATE` e `DROP TABLE`, che la prova a secco non può eseguire.
+
+I conteggi sono letture fatte prima, entro qualche secondo: su tabelle enormi possono dire **righe non contate**. Contano un livello di chiavi esterne, non le catene successive, e vedono solo le chiavi esterne dello schema già caricato.
 
 ## Chiudere con una transazione aperta
 Chiudere l'ultima scheda di una sessione, disconnettere, cambiare spazio di lavoro o uscire con una transazione che contiene scritture apre una finestra:

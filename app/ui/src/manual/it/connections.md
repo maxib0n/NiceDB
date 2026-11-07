@@ -101,7 +101,9 @@ Le modifiche al modello arrivano subito a chi lo segue, tranne nei campi propri.
 ## Gestire le connessioni
 Clic su una connessione la apre e mostra l'albero degli oggetti; se è già aperta, porta alla sua scheda. Accanto al nome: un segno mentre si apre, uno di errore se l'apertura fallisce (il motivo è nel suggerimento), e i pulsanti per disconnettere e modificare.
 
-Il tasto destro offre: **Apri** o **Vai alla connessione**, **Nuova scheda**, **Strumenti** (vedi [Strumenti](tools)), **Modifica…**, **Duplica…**, **Copia come URL** (senza password), **Sposta in**, **Spazi di lavoro**, **Esporta…**, **Disconnetti** ed **Elimina…**.
+Il tasto destro offre: **Apri** o **Vai alla connessione**, **Nuova scheda**, **Strumenti** (vedi [Strumenti](tools)), **Modifica…**, **Duplica…**, **Copia come URL** (senza password), **Colore**, **Segno**, **Sposta in**, **Spazi di lavoro**, **Esporta…**, **Disconnetti** ed **Elimina…**.
+
+**Colore** e **Segno** distinguono una connessione dalle altre, oltre all'ambiente: il colore tinge l'icona nell'albero e mette un punto colorato sulle sue schede; il segno (stella, database, cloud, casa, persona, bandiera, server…) prende il posto del marchio del motore. **Nessuno** li toglie, [[Ctrl+Z]] annulla.
 
 Eliminare chiede conferma. Per 30 secondi [[Ctrl+Z]] riporta la connessione intera, password comprese.
 

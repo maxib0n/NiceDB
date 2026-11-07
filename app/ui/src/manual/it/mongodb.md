@@ -70,6 +70,9 @@ Ogni comando passa dallo stesso controllo delle istruzioni SQL ([Sicurezza in pr
 
 Le modifiche dalla vista **Documenti** finiscono nel registro come il comando equivalente.
 
+## Importare da un file
+Tasto destro su una collezione › **Importa documenti…**: JSON, JSON esteso o NDJSON, con anteprima, conteggio e righe scartate. Vedi [Importare ed esportare](import-export).
+
 ## Limiti
 - Vista Dati, Schema e Strumenti non ci sono per MongoDB.
 - Il piano grafico non c'è: scrivi `{ "explain": { "find": … }, "verbosity": "executionStats" }` e leggi il documento.

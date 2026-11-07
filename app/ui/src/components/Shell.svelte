@@ -2,6 +2,7 @@
   import { shortVersion } from '../lib/version';
   import type { Snippet } from 'svelte';
   import { CircleHelp, Settings, ShieldAlert } from '@lucide/svelte';
+  import { presentation, togglePresentation } from '../lib/presentation.svelte';
   import { m } from '../paraglide/messages';
   import Wordmark from './Wordmark.svelte';
   import WindowControls from './WindowControls.svelte';
@@ -80,6 +81,7 @@
         {:else if selectionStats.wider}<span class="agg-scope" data-scope="loaded" data-tip={selectionStats.error ? m.agg_widen_failed({ message: selectionStats.error }) : undefined}>{m.agg_partial({ count: num(selectionStats.wider.loaded) })}</span><button type="button" class="agg-widen" disabled={selectionStats.busy} data-tip={m.agg_widen_tip()} onclick={() => void widen()}>{m.agg_widen()}</button>{/if}
       </span>
     {/if}
+    {#if presentation.on}<button class="status-present" type="button" data-tip={m.presentation_exit()} onclick={() => togglePresentation(false)}>{m.presentation_badge()}</button>{/if}
     <span>{statusRight}</span>
     <span>NiceDB {shortVersion}</span>
   </footer>

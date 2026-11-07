@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.3.0 (2026-11-07)
+
+- The ER diagram legend is available in every style.
+- Running something while a dry run still waits for Commit or Rollback rolls the dry run back first, instead of refusing; an open-transaction error offers Commit and Rollback in place.
+- The history panel shows new runs while it is open.
+- `nicedb run --conn <connection> file.sql --csv`: runs SQL from the command line on saved connections, with passwords from the keychain and the production gate.
+- Presentation mode (Ctrl+Alt+P): larger type, personal data and connection addresses hidden, for videos and demos.
+- Dry runs and write confirmations say what a DELETE, TRUNCATE or DROP TABLE would take away, and the rows of other tables pointing at it (cascade, set null or blocking).
+- The write log can put back the old values of changes applied from the Data view, after showing the SQL and through the production gate; it says which writes cannot be reverted.
+- Import a JSON, Extended JSON or NDJSON file into a MongoDB collection, an Elasticsearch index or a DynamoDB table, with a preview, a count and the lines left out.
+- Plan history: every Explain is kept per query (values ignored), with a warning when the shape changes or it gets more than 50% slower, and any saved plan can be compared with the current one.
+- Grid: drag a header to move the column, freeze columns on the left, fit all columns at once; order, frozen columns and widths are remembered per table.
+- Optional masking of personal data in results (tax codes, IBANs, emails, phone numbers), off by default; the header eye reveals a column.
+- Ctrl+F in the results grid and the Data view highlights matching cells and steps through them.
+- Ctrl+Shift+T reopens the last closed tab, and the ones before it, with their text.
+- Connections can have a colour and a mark, shown in the tree and on their tabs; eight new marks for folders and connections.
+- Open and save `.sql` files: a File button in the editor bar, Ctrl+O, Ctrl+S and Ctrl+Alt+S (save as), starting from the last folder used; drop `.sql` files on the window to open them.
+- Saved scripts and bookmarked queries can be inserted into the editor from Ctrl+K.
+- History can show every connection and only successful or failed runs.
+- Tabs are saved when the window closes too, so text typed just before quitting comes back at the next start.
+- The connection tree indents each level clearly under its connection.
+- Thinner cell and crosshair pointers.
+
 ## 0.2.2 (2026-11-06)
 
 - Simplified Chinese interface, contributed by @YNM9000.

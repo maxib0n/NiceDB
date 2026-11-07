@@ -58,11 +58,18 @@ Di norma NiceDB chiede il piano **misurato**: la query gira davvero e il piano r
 | **Disegno** | il piano come un flusso da sinistra a destra: lo spessore è il numero di righe che passano, il tratto occupato è dove va il tempo |
 | **Distinta** | l'elenco dei nodi con righe, stime, tempo o costo e quota |
 | **Testo** | il piano come lo restituisce il server |
-| **Confronta** | affianca il piano precedente della scheda: «Prima e dopo», con «3 volte più veloce» o «più lento» |
+| **Confronta** | affianca il piano precedente della scheda, o quello scelto nella cronologia: «Prima e dopo», con «3 volte più veloce» o «più lento» |
+| **Cronologia** | i piani salvati di questa query, al posto delle note |
 | **Solo stima** | richiede il piano senza eseguire la query |
 | **Rispiega** | rifà il piano misurato |
 
 Sopra il disegno, **Cosa succede** riassume il piano in una frase («La query ha impiegato 1,2 s. Il passo più pesante è…»), **Dove va il tempo** (o **Dove va il costo**, per una stima) ripartisce il totale tra i nodi.
+
+## Cronologia dei piani
+Ogni **Spiega** salva il piano su questo computer, per connessione e database: gli ultimi 50 di ogni query. Due query sono la stessa anche se cambiano spazi, commenti, maiuscole o valori: `where id = 5` e `where id = 7` hanno la stessa cronologia.
+- Sotto la query, quando ci sono altri piani, una riga dice quanti e da quando, e quando è cambiata la forma l'ultima volta.
+- **Forma cambiata** avvisa che il piano usa operazioni, indici o un ordine dei join diversi da quello prima; **2,3 volte più lento** che tempo o costo sono saliti di oltre la metà.
+- **Cronologia** mostra l'elenco: data, tempo (o costo, per una stima) e ◆ sui cambi di forma. Clic su un piano per confrontarlo con quello attuale nella **Distinta** e nelle note; di nuovo per tornare al piano precedente della scheda. Un piano stimato e uno misurato non si confrontano.
 
 ## Le note
 Sotto il piano, **Note** elenca i problemi trovati, ognuno con la gravità (**Grave**, **Da guardare**, **Minore**), una spiegazione e un **Suggerimento** da copiare con **Copia**:

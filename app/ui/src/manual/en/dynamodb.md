@@ -40,6 +40,9 @@ Each item is a document, key attributes first. Numbers stay JSON numbers when th
 ## Editing items
 Items of a `SELECT *` or of a `Scan`/`Query` without projection are edited by key: **Save** writes the item only if it is still there, **Insert** only if the key is free, **Delete** only if the item exists. In production every write goes through the write gate and lands in the audit log as a `PutItem` or `DeleteItem` call.
 
+## Import from a file
+Right-click a table › **Import documents…**: each JSON document becomes an item and must carry the table's keys; an item that already exists is refused. See [Import and export](import-export).
+
 ## Writes and production
 `SELECT` and the `Scan`, `Query`, `GetItem`, `BatchGetItem`, `Describe…` and `List…` calls read; the rest writes. `DeleteTable` and `UpdateTable` ask for confirmation as risky.
 

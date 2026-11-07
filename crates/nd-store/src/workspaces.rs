@@ -41,6 +41,14 @@ pub struct SavedTab {
     pub design: Option<SavedDesign>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub trail: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file: Option<SavedFile>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
+pub struct SavedFile {
+    pub path: String,
+    pub dirty: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, specta::Type)]

@@ -1,4 +1,5 @@
 mod civil;
+mod documents;
 mod infer;
 mod json;
 mod kind;
@@ -12,6 +13,7 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
+pub use documents::{Doc, DocLayout, Seen, read_documents};
 pub use infer::{Inferred, infer, sql_type};
 pub use kind::{Kind, kind_of};
 pub use read::{Batch, ReadOptions, Record, Unit, read};

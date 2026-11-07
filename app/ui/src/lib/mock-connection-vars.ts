@@ -15,7 +15,7 @@ const MODEL: ConnectionProfile = {
   name: 'Bassi — modello',
   folder: 'f-bassi',
   environment: 'staging',
-  color: null,
+  color: null, mark: null,
   session: { ...DEFAULT_SESSION, init: 'SET search_path TO vendite, public;', keepalive_secs: 120 },
   template: { kind: 'model' },
   raw_fields: { port: '${PG_PORT}' },

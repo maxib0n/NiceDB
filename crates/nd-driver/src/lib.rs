@@ -275,6 +275,27 @@ pub trait Connection: Send + Sync {
     async fn write_documents(&self, _write: &DocumentWrite) -> Result<Outcome> {
         Err(DriverError::query("this engine does not store documents"))
     }
+    async fn insert_documents(
+        &self,
+        database: &str,
+        collection: &str,
+        documents: &[String],
+    ) -> Result<Vec<Option<String>>> {
+        let mut out = Vec::with_capacity(documents.len());
+        for d in documents {
+            let write = DocumentWrite::Insert {
+                database: database.to_owned(),
+                collection: collection.to_owned(),
+                documents: vec![d.clone()],
+            };
+            match self.write_documents(&write).await {
+                Ok(_) => out.push(None),
+                Err(DriverError::Query { message, .. }) => out.push(Some(message)),
+                Err(e) => return Err(e),
+            }
+        }
+        Ok(out)
+    }
     fn describe_documents(&self, write: &DocumentWrite) -> String {
         write.as_mongo_command()
     }

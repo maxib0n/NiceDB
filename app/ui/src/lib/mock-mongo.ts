@@ -77,7 +77,7 @@ export const MONGO_DEMO: ConnectionProfile[] = params().has('mongo')
         name: 'Gestionale documenti',
         folder: null,
         environment: params().get('mongo') === 'prod' ? 'production' : 'development',
-        color: null,
+        color: null, mark: null,
         session: DEFAULT_SESSION,
         template: { kind: 'none' },
         raw_fields: {},

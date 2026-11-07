@@ -15,7 +15,8 @@ use nd_driver::{
 };
 use nd_sql::{Browse, ChangeSet, GenRequest, Summary};
 use nd_store::{
-    Appearance, AuditEntry, ConnectionProfile, ErLayout, HistoryEntry, UiScale, Visibility,
+    Appearance, AuditEntry, ConnectionProfile, ErLayout, HistoryEntry, HistoryOutcome, UiScale,
+    Visibility,
 };
 use tauri::ipc::Channel;
 use tauri::{State, WebviewWindow};
@@ -288,6 +289,51 @@ async fn explain(core: Ctx<'_>, request: ExplainRequest) -> Res<PlanReport> {
 
 #[tauri::command]
 #[specta::specta]
+async fn write_removals(
+    core: Ctx<'_>,
+    session_id: String,
+    text: String,
+    scope: RunScope,
+) -> Res<Vec<nd_core::Removing>> {
+    core.removals(&session_id, &text, &scope).await
+}
+
+#[tauri::command]
+#[specta::specta]
+async fn write_linked(
+    core: Ctx<'_>,
+    session_id: String,
+    text: String,
+    scope: RunScope,
+    index: u32,
+    links: Vec<nd_core::Referencing>,
+) -> Res<Vec<Option<f64>>> {
+    let counts = core
+        .linked_rows(&session_id, &text, &scope, index, &links)
+        .await?;
+    #[allow(clippy::cast_precision_loss)]
+    Ok(counts.into_iter().map(|n| n.map(|n| n as f64)).collect())
+}
+
+#[tauri::command]
+#[specta::specta]
+fn plan_history(
+    core: Ctx<'_>,
+    connection_id: String,
+    database: String,
+    sql: String,
+) -> Res<Vec<nd_store::SavedPlan>> {
+    core.plan_history(&connection_id, &database, &sql)
+}
+
+#[tauri::command]
+#[specta::specta]
+fn plan_saved(core: Ctx<'_>, id: u32) -> Res<Option<String>> {
+    core.plan_saved(i64::from(id))
+}
+
+#[tauri::command]
+#[specta::specta]
 async fn run_cancel(core: Ctx<'_>, run_id: String) -> Res<()> {
     core.cancel(&run_id).await
 }
@@ -298,9 +344,10 @@ fn history_list(
     core: Ctx<'_>,
     connection_id: Option<String>,
     query: String,
+    outcome: HistoryOutcome,
     limit: u32,
 ) -> Res<Vec<HistoryEntry>> {
-    core.store(|s| s.history(connection_id.as_deref(), &query, limit.min(1000)))
+    core.store(|s| s.history_where(connection_id.as_deref(), &query, outcome, limit.min(1000)))
 }
 
 fn exportable(path: &Path) -> bool {
@@ -315,23 +362,164 @@ fn exportable(path: &Path) -> bool {
 }
 
 async fn ask_path(window: &WebviewWindow, save_as: Option<&str>) -> Option<PathBuf> {
+    ask_path_in(window, save_as, None, None).await
+}
+
+async fn ask_path_in(
+    window: &WebviewWindow,
+    save_as: Option<&str>,
+    folder: Option<PathBuf>,
+    pick: Option<&[&str]>,
+) -> Option<PathBuf> {
     use tauri_plugin_dialog::DialogExt as _;
     let (tx, rx) = tokio::sync::oneshot::channel();
     let done = move |p: Option<tauri_plugin_dialog::FilePath>| {
         let _ = tx.send(p.and_then(|p| p.into_path().ok()));
     };
-    let dialog = window.dialog().file();
-    match save_as {
-        Some(name) => {
-            let mut dialog = dialog.set_parent(window).set_file_name(name);
-            if let Some(ext) = Path::new(name).extension().and_then(|e| e.to_str()) {
-                dialog = dialog.add_filter(ext.to_uppercase(), &[ext]);
-            }
-            dialog.save_file(done);
+    let mut dialog = window.dialog().file();
+    if let Some(folder) = folder {
+        dialog = dialog.set_directory(folder);
+    }
+    if let Some(name) = save_as {
+        let mut dialog = dialog.set_parent(window).set_file_name(name);
+        if let Some(ext) = Path::new(name).extension().and_then(|e| e.to_str()) {
+            dialog = dialog.add_filter(ext.to_uppercase(), &[ext]);
         }
-        None => dialog.pick_file(done),
+        dialog.save_file(done);
+    } else {
+        if let Some(extensions) = pick {
+            dialog = dialog.set_parent(window).add_filter("SQL", extensions);
+        }
+        dialog.pick_file(done);
     }
     rx.await.ok().flatten()
+}
+
+#[derive(serde::Deserialize, specta::Type)]
+pub struct ColumnSample {
+    pub name: String,
+    pub values: Vec<String>,
+}
+
+#[tauri::command]
+#[specta::specta]
+fn sensitive_columns(columns: Vec<ColumnSample>) -> Vec<Option<String>> {
+    columns
+        .iter()
+        .map(|c| {
+            let values: Vec<&str> = c.values.iter().map(String::as_str).collect();
+            nd_core::sensitive_kind(&c.name, &values).map(str::to_owned)
+        })
+        .collect()
+}
+
+#[derive(serde::Serialize, specta::Type)]
+pub struct SqlFile {
+    pub path: String,
+    pub name: String,
+    pub text: String,
+}
+
+fn sql_path(path: &Path) -> bool {
+    path.extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| e.eq_ignore_ascii_case("sql") || e.eq_ignore_ascii_case("txt"))
+}
+
+fn sql_file(path: &Path, text: String) -> SqlFile {
+    SqlFile {
+        path: path.display().to_string(),
+        name: path
+            .file_name()
+            .map_or_else(String::new, |n| n.to_string_lossy().into_owned()),
+        text,
+    }
+}
+
+fn sql_folder(core: &Ctx<'_>) -> Option<PathBuf> {
+    core.store(nd_store::Store::sql_folder)
+        .ok()
+        .flatten()
+        .map(PathBuf::from)
+        .filter(|p| p.is_dir())
+}
+
+fn remember_folder(core: &Ctx<'_>, path: &Path) {
+    if let Some(folder) = path.parent().and_then(Path::to_str) {
+        let _ = core.store(|s| s.set_sql_folder(folder));
+    }
+}
+
+#[tauri::command]
+#[specta::specta]
+async fn sql_file_open(core: Ctx<'_>, window: WebviewWindow) -> Res<Option<SqlFile>> {
+    let Some(path) = ask_path_in(&window, None, sql_folder(&core), Some(&["sql", "txt"])).await
+    else {
+        return Ok(None);
+    };
+    read_sql(&core, path).await.map(Some)
+}
+
+#[tauri::command]
+#[specta::specta]
+async fn sql_file_read(core: Ctx<'_>, path: String) -> Res<SqlFile> {
+    read_sql(&core, PathBuf::from(path)).await
+}
+
+async fn read_sql(core: &Ctx<'_>, path: PathBuf) -> Res<SqlFile> {
+    const MAX: u64 = 16 * 1024 * 1024;
+    if !sql_path(&path) {
+        return Err(CommandError::NotFound(path.display().to_string()));
+    }
+    remember_folder(core, &path);
+    tokio::task::spawn_blocking(move || {
+        if std::fs::metadata(&path)?.len() > MAX {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "the file is larger than 16 MB",
+            ));
+        }
+        let text = std::fs::read_to_string(&path)?;
+        Ok(sql_file(&path, text))
+    })
+    .await
+    .map_err(|e| CommandError::Store(e.to_string()))?
+    .map_err(|e| CommandError::Store(e.to_string()))
+}
+
+#[tauri::command]
+#[specta::specta]
+async fn sql_file_save(
+    core: Ctx<'_>,
+    window: WebviewWindow,
+    path: Option<String>,
+    name: String,
+    text: String,
+) -> Res<Option<SqlFile>> {
+    let path = if let Some(p) = path {
+        PathBuf::from(p)
+    } else {
+        let name = if sql_path(Path::new(&name)) {
+            name
+        } else {
+            format!("{name}.sql")
+        };
+        let Some(p) = ask_path_in(&window, Some(&name), sql_folder(&core), None).await else {
+            return Ok(None);
+        };
+        p
+    };
+    if !sql_path(&path) {
+        return Err(CommandError::NotFound(path.display().to_string()));
+    }
+    remember_folder(&core, &path);
+    tokio::task::spawn_blocking(move || {
+        std::fs::write(&path, &text)?;
+        Ok(Some(sql_file(&path, text)))
+    })
+    .await
+    .map_err(|e| CommandError::Store(e.to_string()))?
+    .map_err(|e: std::io::Error| CommandError::Store(e.to_string()))
 }
 
 #[derive(serde::Serialize, specta::Type)]
@@ -629,8 +817,16 @@ fn commands() -> Builder<tauri::Wry> {
         params_found,
         run_cancel,
         history_list,
+        plan_history,
+        plan_saved,
+        write_removals,
+        write_linked,
         export_save,
         file_load,
+        sql_file_open,
+        sql_file_read,
+        sql_file_save,
+        sensitive_columns,
         report_pdf,
         data_browse,
         data_pick,
@@ -684,6 +880,8 @@ fn commands() -> Builder<tauri::Wry> {
         crate::tools::data_export,
         crate::tools::data_import_sample,
         crate::tools::data_import,
+        crate::tools::document_import_sample,
+        crate::tools::document_import,
         crate::tools::job_cancel,
         crate::tools::schema_compare,
         crate::tools::table_design,

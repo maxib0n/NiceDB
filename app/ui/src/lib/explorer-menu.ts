@@ -1,4 +1,5 @@
 import { browseText, hasTool, isSql, relationalCaps, sqlOf } from './family';
+import { askImportDocuments } from './tools.svelte';
 import { openDynamoBuilder } from './dynamo-builder.svelte';
 import { dynamoQuery, dynamoScan } from './nosql-lang';
 import { ICON, TOOL_ICON } from './icons';
@@ -191,6 +192,7 @@ function relationMenu(ctx: MenuContext, n: ExNode): MenuEntry[] {
       ...(rel?.indexes ?? []).map((ix) => ({ label: m.ddb_query_index({ index: ix.name }), icon: ICON.newQuery, run: () => ctx.act.query(database, dynamoQuery(rel as NonNullable<typeof rel>, ix.name)) })),
       caps.er && { label: m.tree_show_er(), icon: ICON.er, run: () => ctx.act.er(p) },
       caps.ddl && showDdl,
+      caps.editable && (lang === 'mql' || lang === 'search' || lang === 'partiql') && { label: m.doc_import_dots(), icon: ICON.import, run: () => askImportDocuments({ connectionId: ctx.connectionId, database, collection: name }) },
       'separator',
       { label: m.tree_copy_name(), icon: ICON.copy, hint: name, run: () => copyText(name) },
       { label: lang === 'mql' ? m.tree_copy_command() : m.tree_copy_browse(), run: () => copyText(find) },

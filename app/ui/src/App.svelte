@@ -16,9 +16,16 @@
   import type { ConnectionProfile } from './lib/api';
   import { connections, loadConnections, type EditMode } from './lib/connections.svelte';
   import { guardNativeMenu } from './lib/contextmenu.svelte';
-  import { loadFolders, spaceKeys, startSpaces, watchSession } from './lib/org.svelte';
+  import { flush, loadFolders, spaceKeys, startSpaces, watchSession } from './lib/org.svelte';
   import { undoKeys } from './lib/undo.svelte';
-  import { activeTab, databaseOf, sessionOf, waitingAll, watchSessions, workspace } from './lib/workspace.svelte';
+  import { activeTab, databaseOf, reopenClosed, sessionOf, waitingAll, watchSessions, workspace } from './lib/workspace.svelte';
+  import { currentBindings } from './lib/prefs.svelte';
+  import { matches } from './lib/shortcuts';
+  import { togglePresentation } from './lib/presentation.svelte';
+  import { api } from './lib/api';
+  import { splitDropped } from './lib/file-drop';
+  import { openSqlPaths } from './lib/sqlfile.svelte';
+  import { showToast } from './lib/toast.svelte';
   import { guardWindowClose, settleBeforeClosing } from './lib/tx.svelte';
   import { widthVars } from './lib/resize';
   import { wizardShown } from './lib/wizard.svelte';
@@ -33,18 +40,62 @@
   import { update } from './lib/update.svelte';
   import Manual from './screens/Manual.svelte';
   import { currentContext, help, helpKeys, openHelp, closeHelp } from './lib/manual.svelte';
-  import { CircleHelp } from '@lucide/svelte';
+  import { CircleHelp, FolderOpen } from '@lucide/svelte';
 
   let settings = $state(new URLSearchParams(location.search).get('screen') === 'settings');
   let editing = $state<{ profile: ConnectionProfile | null; mode: EditMode; folder?: string | null } | null>(null);
+  let dropping = $state(false);
+
+  $effect(() => {
+    let stop: (() => void) | null = null;
+    let gone = false;
+    void api
+      .listenFileDrop((e) => {
+        if (e.type === 'enter') dropping = splitDropped(e.paths).open.length > 0;
+        else if (e.type === 'leave') dropping = false;
+        else if (e.type === 'drop') {
+          dropping = false;
+          const { open, skipped } = splitDropped(e.paths);
+          const tab = activeTab();
+          if (!open.length) showToast(m.file_drop_none());
+          else if (!tab) showToast(m.file_drop_no_connection());
+          else {
+            if (skipped.length) showToast(m.file_drop_skipped({ names: skipped.join(', ') }));
+            void openSqlPaths(tab.connectionId, open);
+          }
+        }
+      })
+      .then((f) => (gone ? f() : (stop = f)))
+      .catch(() => {});
+    return () => {
+      gone = true;
+      stop?.();
+    };
+  });
 
   void Promise.all([loadConnections(), loadFolders()]).then(startSpaces);
   void update.autoCheck();
-  update.beforeRestart = () => settleBeforeClosing(waitingAll(), 'app');
+  update.beforeRestart = async () => (await settleBeforeClosing(waitingAll(), 'app')) && (await flush().catch(() => {}), true);
   $effect(() => guardNativeMenu());
   $effect(() => spaceKeys());
   $effect(() => watchSession());
   $effect(() => undoKeys());
+  $effect(() => {
+    const onkey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || wizardShown() || document.querySelector('dialog[open]')) return;
+      const b = currentBindings();
+      if (matches(e, b.presentation)) {
+        e.preventDefault();
+        togglePresentation();
+        return;
+      }
+      if (settings || !matches(e, b.reopen_tab)) return;
+      e.preventDefault();
+      void reopenClosed();
+    };
+    window.addEventListener('keydown', onkey);
+    return () => window.removeEventListener('keydown', onkey);
+  });
   $effect(() => paletteKeys(() => !wizardShown()));
   $effect(() => warmPalette());
   const helpHere = () => {
@@ -59,7 +110,7 @@
   paletteHost.connectionDialog = (p, mode) => (editing = { profile: p, mode });
   $effect(() => registerCommands(profileCommands((p) => (editing = { profile: p, mode: 'follow' }))));
   watchSessions();
-  guardWindowClose(waitingAll);
+  guardWindowClose(waitingAll, flush);
   $effect(() => {
     const root = document.documentElement.style;
     for (const [name, value] of widthVars(workspace.widths)) {
@@ -122,6 +173,9 @@
     <Connections onnew={() => (editing = { profile: null, mode: 'edit' })} hasConnections={connections.list.length > 0} />
   {/if}
 </Shell>
+{#if dropping}
+  <div class="file-drop" role="status" aria-live="polite"><FolderOpen size={28} strokeWidth={1.5} aria-hidden="true" /><span>{m.file_drop()}</span></div>
+{/if}
 
 {#if editing}
   <ConnectionDialog profile={editing.profile} copy={editing.mode === 'copy'} askDelete={editing.mode === 'delete'} follow={editing.mode === 'follow'} folder={editing.folder} onclose={() => (editing = null)} />
