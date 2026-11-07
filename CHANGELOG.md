@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 (2026-11-07)
+
+- The first start follows the system: interface language (Italian, Chinese, otherwise English) and light or dark theme.
+- The window fits smaller screens: the minimum size is now 960×600.
+- A bug report template asks for the engine and version, steps and expected result.
+
 ## 0.3.0 (2026-11-07)
 
 - The ER diagram legend is available in every style.

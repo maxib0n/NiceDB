@@ -1,3 +1,5 @@
+# NiceDB
+
 <p align="center">
   <img src=".github/readme/banner.png" alt="NiceDB: made for production databases; relational, documents, key-value, wide-column, search and analytical engines; runs on Linux, Windows and macOS" width="100%">
 </p>
@@ -107,7 +109,11 @@ Profiles stay in a local database. Passwords, tokens and key passphrases go to t
 
 ## Status
 
-NiceDB is at version 0.1, the first public release. It is tested against local servers for most of the engines above, plus SAP HANA Cloud. Bug reports and feature requests are welcome in the issues.
+NiceDB is young and moves fast. Bug reports and feature requests are welcome in the issues.
+
+**A note on engine coverage.** NiceDB uses mature, well-tested drivers for every engine, and the most common paths are tested against real servers. Still, covering every combination of versions, configurations, extensions and edge cases across 25 engines is a huge job for one person. I use SQL Server, PostgreSQL, MySQL and MongoDB daily; the others get less real-world mileage.
+
+If you use NiceDB, or plan to use it, against production databases, **please be careful**, and report anything that looks wrong: the engine and version, what you did, what you expected and what happened, ideally with a small way to reproduce it. That's how I can fix the problems I can't see from my own setup.
 
 ## Platforms
 

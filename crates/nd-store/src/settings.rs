@@ -195,7 +195,7 @@ impl Default for Appearance {
         Self {
             style: Style::Listino,
             palette: Palette::P2,
-            theme: ThemeMode::Dark,
+            theme: ThemeMode::System,
             locale: Locale::default(),
             ui_scale: UiScale::default(),
             sounds: true,

@@ -1,5 +1,5 @@
 import { overwriteGetLocale } from '../paraglide/runtime';
-import { api, defaultAppearance, type Appearance } from './api';
+import { api, defaultAppearance, inTauri, type Appearance } from './api';
 import { applyPointers } from './pointer-theme';
 import { configureSound } from './sound';
 
@@ -38,8 +38,27 @@ export function applyToDocument(a: Appearance, systemDark: boolean, root: HTMLEl
   });
 }
 
+export function systemLocale(languages: readonly string[]): Appearance['locale'] {
+  for (const l of languages.map((x) => x.toLowerCase())) {
+    if (l.startsWith('it')) return 'it';
+    if (l.startsWith('zh')) return 'zh-CN';
+    if (l.startsWith('en')) return 'en';
+  }
+  return 'en';
+}
+
+const GUESSED = 'nd-locale-guessed';
+
 export async function loadAppearance() {
   appearance.value = await api.appearanceGet();
+  if (inTauri && !appearance.value.setup_done && typeof navigator !== 'undefined') {
+    let guessed = false;
+    try {
+      guessed = localStorage.getItem(GUESSED) === '1';
+      localStorage.setItem(GUESSED, '1');
+    } catch {}
+    if (!guessed) appearance.value = { ...appearance.value, locale: systemLocale(navigator.languages ?? [navigator.language]) };
+  }
   applyToDocument(appearance.value, appearance.systemDark);
   voice(appearance.value);
   dark?.addEventListener('change', (e) => {
