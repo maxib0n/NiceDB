@@ -123,6 +123,10 @@
   const rowAt = (r: number) => (r >= newCount ? pageRows[r - newCount] : undefined);
 
   const edit: GridEdit = {
+    lock() {
+      if (editable) return null;
+      return reason ?? (open ? m.data_applying() : m.grid_locked());
+    },
     cell(r, c) {
       void d.rev;
       const p = d.pending;
@@ -567,7 +571,7 @@
       {#if hint}
         <span class="dv-msg">{hint}</span>
       {:else if d.message}
-        <span class="dv-msg {d.message.kind}" role="status">{d.message.text}</span>
+        <span class="dv-msg {d.message.kind}" role="status" data-tip={d.message.kind === 'error' ? d.message.text : undefined}>{d.message.text}</span>
       {:else if editable && counts.total === 0}
         <span class="dv-keys">{m.data_keys_hint()}{#if fks.length} · {m.fk_keys_hint()}{/if}</span>
       {/if}

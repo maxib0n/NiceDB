@@ -1,4 +1,4 @@
-import { cursorVar, POINTERS, pointerSvg, pointerVars, toHex, type CursorForm, type Pointer, type PointerShape } from './pointers';
+import { cursorVar, POINTERS, pointerVars, toHex, type CursorForm, type PointerShape } from './pointers';
 
 const PLAIN = 'forced-colors: active), (prefers-contrast: more';
 const PROBE = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E")`;
@@ -36,11 +36,6 @@ function themeInk(root: HTMLElement) {
   const rim = resolve(root, '--nd-pointer-rim');
   const shape: PointerShape = getComputedStyle(root).getPropertyValue('--nd-pointer-shape').trim() === 'hard' ? 'hard' : 'soft';
   return fill && rim ? { ink: { fill, rim }, shape } : null;
-}
-
-export function pointerPreview(names: readonly Pointer[], root: HTMLElement = document.documentElement): string[] {
-  const t = themeInk(root);
-  return t ? names.map((n) => `data:image/svg+xml,${encodeURIComponent(pointerSvg(n, t.ink, t.shape, 48))}`) : [];
 }
 
 export function applyPointers(on: boolean, scale = 100, root: HTMLElement = document.documentElement) {

@@ -13,29 +13,3 @@
 :where(button, a[href], [role='button'], [role='tab'], [role='menuitem'], [role='menuitemradio'], [role='option'], [role='radio'], [role='switch'], [role='checkbox'], summary, select, label):where(:not(:disabled)):active {
   --nd-cur-pointer: var(--nd-cur-press);
 }
-
-.ptr-offer {
-  width: min(460px, calc(100vw - 48px));
-}
-.ptr-offer .dialog-body p {
-  margin: 0;
-  color: var(--nd-ink-2);
-}
-.ptr-shots {
-  display: flex;
-  gap: 8px;
-}
-.ptr-shots img {
-  display: block;
-  width: 48px;
-  height: 48px;
-  padding: 6px;
-  box-sizing: content-box;
-  border: 1px solid var(--nd-rule);
-  border-radius: 4px;
-  background: var(--nd-surface-2);
-}
-[data-style='listino'] .ptr-shots img,
-[data-style='tavola'] .ptr-shots img {
-  border-radius: 0;
-}

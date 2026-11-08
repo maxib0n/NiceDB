@@ -109,7 +109,7 @@
             {#each out as o (o.key)}
               {@const preview = previews[o.key]}
               <li class="related-item">
-                <button class="related-go" type="button" disabled={!o.target || !o.quick} onclick={() => o.target && o.quick && onfollow(o.target, o.quick, false)}>
+                <button class="related-go" type="button" data-tip={m.fk_follow_here()} disabled={!o.target || !o.quick} onclick={() => o.target && o.quick && onfollow(o.target, o.quick, false)}>
                   <span class="related-name">{o.target?.name ?? '?'}</span>
                   <span class="related-via">{m.fk_via({ columns: o.via })}</span>
                   <span class="related-what" class:muted={!o.quick || preview === null}>
@@ -117,7 +117,7 @@
                   </span>
                   <ArrowRight class="related-arrow" size={14} strokeWidth={1.8} aria-hidden="true" />
                 </button>
-                <button class="icon-btn related-tab" type="button" aria-label={m.fk_follow_tab()} data-tip={m.fk_follow_tab()} disabled={!o.target || !o.quick} onclick={() => o.target && o.quick && onfollow(o.target, o.quick, true)}><SquareArrowOutUpRight size={13} strokeWidth={1.8} /></button>
+                <button class="icon-btn related-tab" type="button" aria-label={m.fk_follow_tab()} data-tip={m.fk_follow_tab()} disabled={!o.target || !o.quick} onclick={() => o.target && o.quick && onfollow(o.target, o.quick, true)}><SquareArrowOutUpRight size={14} strokeWidth={1.8} aria-hidden="true" /></button>
               </li>
             {/each}
           </ul>
@@ -132,13 +132,13 @@
             {#each ins as x (x.key)}
               {@const n = counts[x.key]}
               <li class="related-item">
-                <button class="related-go" type="button" disabled={!x.target || !x.quick} onclick={() => x.target && x.quick && onfollow(x.target, x.quick, false)}>
+                <button class="related-go" type="button" data-tip={m.fk_follow_here()} disabled={!x.target || !x.quick} onclick={() => x.target && x.quick && onfollow(x.target, x.quick, false)}>
                   <span class="related-name">{x.target?.name ?? '?'}</span>
                   <span class="related-via">{m.fk_via({ columns: x.via })}</span>
                   <span class="related-count" class:zero={n === 0} data-tip={n === null ? m.fk_rows_unknown() : undefined}>{rows(n)}</span>
                   <ArrowRight class="related-arrow" size={14} strokeWidth={1.8} aria-hidden="true" />
                 </button>
-                <button class="icon-btn related-tab" type="button" aria-label={m.fk_follow_tab()} data-tip={m.fk_follow_tab()} disabled={!x.target || !x.quick} onclick={() => x.target && x.quick && onfollow(x.target, x.quick, true)}><SquareArrowOutUpRight size={13} strokeWidth={1.8} /></button>
+                <button class="icon-btn related-tab" type="button" aria-label={m.fk_follow_tab()} data-tip={m.fk_follow_tab()} disabled={!x.target || !x.quick} onclick={() => x.target && x.quick && onfollow(x.target, x.quick, true)}><SquareArrowOutUpRight size={14} strokeWidth={1.8} aria-hidden="true" /></button>
               </li>
             {/each}
           </ul>

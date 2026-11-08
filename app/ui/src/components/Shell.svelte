@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { shortVersion } from '../lib/version';
+  import { version } from '../lib/version';
   import type { Snippet } from 'svelte';
   import { CircleHelp, Settings, ShieldAlert } from '@lucide/svelte';
   import { presentation, togglePresentation } from '../lib/presentation.svelte';
@@ -83,7 +83,7 @@
     {/if}
     {#if presentation.on}<button class="status-present" type="button" data-tip={m.presentation_exit()} onclick={() => togglePresentation(false)}>{m.presentation_badge()}</button>{/if}
     <span>{statusRight}</span>
-    <span>NiceDB {shortVersion}</span>
+    <span class="nd-version">NiceDB {version}</span>
   </footer>
   <span class="sr-only" role="status">{statusTone ? status : ''}</span>
 </div>

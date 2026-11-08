@@ -271,14 +271,16 @@ async fn run(core: Ctx<'_>, request: RunRequest, events: Channel<RunEvent>) -> R
 
 #[tauri::command]
 #[specta::specta]
-#[allow(clippy::needless_pass_by_value)]
-fn params_found(
+async fn params_found(
     core: Ctx<'_>,
     text: String,
     dialect: Dialect,
     scope: RunScope,
 ) -> Res<ParamsFound> {
-    core.params_found(&text, dialect, &scope)
+    let core = Arc::clone(&core);
+    tokio::task::spawn_blocking(move || core.params_found(&text, dialect, &scope))
+        .await
+        .map_err(|e| CommandError::Store(e.to_string()))?
 }
 
 #[tauri::command]

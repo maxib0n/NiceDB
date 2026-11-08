@@ -16,7 +16,7 @@ In the **Data** view a foreign key takes you to the row it points to, a row show
 
 To open it in a **new tab** and leave the current one as it is: [[Shift+F4]], middle-click or [[Ctrl]]+click on the arrow, or right-click › **Open in a new tab**. The new tab is named after the row, for example `customers (id = 63)`. The menu also has **Open the linked row**.
 
-When the key is NULL there is nothing to open and the bar says so: "Nothing to open: customer_id is NULL." With pending changes the table does not switch: apply or discard them first.
+When the key is NULL there is nothing to open and the bar says so: "Nothing to open: customer_id is NULL." With pending changes, NiceDB asks what to do with them before switching table: **Apply and continue**, **Discard edits** or **Stay** (also [[Esc]]). This holds for links, the table picker, the tree and the back and forward arrows.
 
 ## Go back
 Each step leaves a crumb to the left of the table name: `orders › customers › invoices`.
@@ -30,7 +30,7 @@ The trail stays with the tab: it comes back when you reopen a closed tab with [[
 
 ## Links of this row
 **Links**, in the header, opens a panel on the right that follows the selected row. It appears only when the table has foreign keys, outgoing or incoming. [[F4]] on a column that is not a foreign key opens the same panel.
-- **Points to**: one entry per foreign key of the table, with the column it starts from ("from customer_id") and a preview of the target row. Click to open it here, the icon on the right to open it in a new tab.
+- **Points to**: one entry per foreign key of the table, with the column it starts from ("from customer_id") and a preview of the target row. Click the entry (arrow →) to open it here, in the same tab; the box-with-arrow icon (↗) on the right opens it in a new tab. Their tooltips say so too.
 - **Pointing here**: the tables with a foreign key to this one, other schemas included, each with the number of rows that refer to the selected row. Click to open those rows, filtered.
 
 Counts run read-only and stop after 2 seconds; those that did not arrive in time stay "—". The panel widens from its left edge and takes turns with the Log and the value panel.

@@ -25,6 +25,7 @@ export interface RowView {
 
 export interface GridEdit {
   readonly?: boolean;
+  lock?(): string | null;
   cell(r: number, c: number): CellView | null;
   row(r: number): RowView | null;
   applied(r: number, c: number): boolean;

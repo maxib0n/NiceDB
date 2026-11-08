@@ -36,7 +36,6 @@
   import Connections from './screens/Connections.svelte';
   import Settings, { showSettingsSection } from './screens/Settings.svelte';
   import UpdateBanner from './components/UpdateBanner.svelte';
-  import PointersOffer from './components/PointersOffer.svelte';
   import { update } from './lib/update.svelte';
   import Manual from './screens/Manual.svelte';
   import { currentContext, help, helpKeys, openHelp, closeHelp } from './lib/manual.svelte';
@@ -199,7 +198,6 @@
   />
 {/if}
 
-<PointersOffer />
 <OrgDialogs />
 <ConfirmWrite />
 <ContextMenu />

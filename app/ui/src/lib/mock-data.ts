@@ -2,6 +2,7 @@ import { ApiError, type ApplyOutcome, type AuditEntry, type Browse, type ChangeS
 import { gate } from './prodsafety';
 import { mockServer } from './mock-drivers';
 import { readPrefs } from './mock-notes';
+import { fkViolation } from './mock-foreign-keys';
 import type { Change_Deserialize as Change, Field_Deserialize as Field, Risk, RiskFound_Serialize as RiskFound } from './bindings';
 
 type Cell = string | null;
@@ -212,6 +213,12 @@ export function dataMock(tables: Record<string, Gen>, profile: (sessionId: strin
       const before = { rows: new Map(s.rows), gone: new Set(s.gone), added: s.added.map((r) => [...r]) };
       const script = set.changes.map((c) => preview(set.table.name, c));
       for (const [index, c] of set.changes.entries()) {
+        const error = fkViolation(set.table.name, c, (t) => tables[t]?.total);
+        if (error) {
+          Object.assign(s, before);
+          log(sessionId, script.join(';\n'), null, error.kind === 'query' ? error.message : '');
+          return { kind: 'failed', index, error };
+        }
         if (c.kind === 'insert') {
           const row: Cell[] = cols.map((_n, i) => (i === 0 ? String(gen.total + s.added.length + 1) : null));
           for (const f of c.values) row[cols.indexOf(f.column)] = f.value ?? null;

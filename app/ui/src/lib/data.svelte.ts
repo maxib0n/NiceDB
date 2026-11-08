@@ -2,9 +2,12 @@ import { m } from '../paraglide/messages';
 import { api, driverMessage, type ChangePreview, type Page, type Schema, type SessionInfo } from './api';
 import type { Browse_Deserialize as Browse, ColumnInfo, Order, QuickFilter, Relation_Serialize as Relation } from './bindings';
 import { Pending, rowKey, type Target } from './changeset';
+import { connections } from './connections.svelte';
+import { describeViolation, violation } from './constraint';
 import { changeRows } from './estimate';
 import type { Crumb } from './fk';
 import { askConfirm, settle, writesOpen } from './guard.svelte';
+import { askLeave } from './leave.svelte';
 import { play } from './sound';
 import { refreshTx } from './tx.svelte';
 
@@ -92,7 +95,7 @@ export class DataTab {
 
   async open(session: SessionInfo, info: TableInfo) {
     if (this.info && this.info.namespace === info.namespace && this.info.name === info.name) return;
-    if (this.blocked()) return;
+    if (!(await this.leave(session))) return;
     const r = this.restored;
     this.restored = null;
     const back = r && r.here.namespace === info.namespace && r.here.name === info.name ? r : null;
@@ -114,7 +117,7 @@ export class DataTab {
   }
 
   async follow(session: SessionInfo, info: TableInfo, quick: QuickFilter[], focus?: Crumb['focus']): Promise<boolean> {
-    if (this.blocked()) return false;
+    if (!(await this.leave(session))) return false;
     const now = this.here();
     if (now) this.trail = [...this.trail, focus ? { ...now, focus } : now];
     this.ahead = [];
@@ -125,7 +128,7 @@ export class DataTab {
 
   async back(session: SessionInfo, info: TableInfo, at: number): Promise<Crumb['focus']> {
     const crumb = this.trail[at];
-    if (!crumb || this.blocked()) return;
+    if (!crumb || !(await this.leave(session))) return;
     const now = this.here();
     this.ahead = [...this.ahead, ...(now ? [now] : []), ...this.trail.slice(at + 1).reverse()];
     this.trail = this.trail.slice(0, at);
@@ -136,7 +139,7 @@ export class DataTab {
 
   async forward(session: SessionInfo, info: TableInfo) {
     const crumb = this.ahead[this.ahead.length - 1];
-    if (!crumb || this.blocked()) return;
+    if (!crumb || !(await this.leave(session))) return;
     const now = this.here();
     this.ahead = this.ahead.slice(0, -1);
     if (now) this.trail = [...this.trail, now];
@@ -149,10 +152,18 @@ export class DataTab {
     return now ? { namespace: now.namespace, name: now.name, where: this.where, quick: this.quick, order: this.order, offset: this.offset } : null;
   }
 
-  private blocked() {
-    if (!this.pending || this.pending.empty) return false;
-    this.message = { kind: 'error', text: m.data_switch_blocked() };
-    return true;
+  private async leave(session: SessionInfo): Promise<boolean> {
+    const p = this.pending;
+    if (!p || p.empty) return true;
+    const choice = await askLeave(p.counts.total);
+    if (choice === 'discard') {
+      this.pending = new Pending(p.shape);
+      this.touch();
+      return true;
+    }
+    if (choice !== 'apply') return false;
+    await this.apply(session, connections.list.find((c) => c.id === session.connection_id)?.name ?? '');
+    return !!this.pending?.empty;
   }
 
   private show(info: TableInfo, view: Pick<Crumb, 'where' | 'quick' | 'order' | 'offset'>) {
@@ -286,9 +297,12 @@ export class DataTab {
         }, 1800);
       } else {
         const t: Target | undefined = targets[out.index];
-        if (t) p.setMark(t, out.kind === 'conflict' ? { kind: 'conflict' } : { kind: 'error', message: driverMessage(out.error) });
+        const raw = out.kind === 'conflict' ? '' : driverMessage(out.error);
+        const v = out.kind === 'conflict' ? null : violation(out.error);
+        const plain = v ? describeViolation(v, info.name) : raw;
+        if (t) p.setMark(t, out.kind === 'conflict' ? { kind: 'conflict' } : { kind: 'error', message: v ? `${plain} ${raw}` : raw });
         play('error');
-        this.message = { kind: 'error', text: out.kind === 'conflict' ? m.data_conflict({ n: out.index + 1 }) : m.data_failed({ n: out.index + 1, message: driverMessage(out.error) }) };
+        this.message = { kind: 'error', text: out.kind === 'conflict' ? m.data_conflict({ n: out.index + 1 }) : m.data_failed({ n: out.index + 1, message: plain }) };
         this.auditRev++;
       }
     } catch (e) {

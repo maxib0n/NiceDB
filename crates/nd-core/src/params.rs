@@ -2,7 +2,7 @@ use nd_sql::{Dialect, Filled, ParamError, ParamName, ParamValue, Statement};
 use nd_store::ParamUse;
 use serde::Serialize;
 
-use crate::offsets::byte_to_utf16;
+use crate::offsets::Utf16Cursor;
 use crate::run::{RunScope, select};
 use crate::{Core, Result};
 
@@ -137,11 +137,12 @@ impl Core {
     ) -> Result<ParamsFound> {
         let statements = select(text, dialect, scope);
         let mut slots: Vec<ParamSlot> = Vec::new();
+        let mut utf16 = Utf16Cursor::new(text);
         for (st, list) in statements.iter().zip(found(text, dialect, &statements)) {
             for (p, key) in list {
                 let spot = ParamSpot {
-                    from: byte_to_utf16(text, st.range.start + p.range.start),
-                    to: byte_to_utf16(text, st.range.start + p.range.end),
+                    from: utf16.at(st.range.start + p.range.start),
+                    to: utf16.at(st.range.start + p.range.end),
                 };
                 match slots.iter_mut().find(|s| s.name == key) {
                     Some(s) => s.spots.push(spot),

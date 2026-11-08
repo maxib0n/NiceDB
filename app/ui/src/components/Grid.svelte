@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onScrollbar } from '../lib/scrollbar';
-  import { ArrowDownWideNarrow, ArrowUpNarrowWide, ArrowUpRight, ChevronDown, ChevronUp, ClipboardCopy, Eraser, Filter, Link2, MoveHorizontal, Pencil, Pin, PinOff, RotateCcw, Search, Trash2, X } from '@lucide/svelte';
+  import { ArrowDownWideNarrow, ArrowUpNarrowWide, ArrowUpRight, ChevronDown, ChevronUp, ClipboardCopy, Eraser, Filter, Link2, Lock, MoveHorizontal, Pencil, Pin, PinOff, RotateCcw, Search, Trash2, X } from '@lucide/svelte';
   import { tick } from 'svelte';
   import { api } from '../lib/api';
   import { presentation } from '../lib/presentation.svelte';
@@ -870,22 +870,31 @@
     if (!edit || edit.readonly) return null;
     const state = edit.row(r)?.state;
     const spans = S.rowSpans(sel);
+    const locked = !!edit.lock?.();
     const many = spans.length > 1 || spans.some(([a, b]) => b > a);
     return {
       label: state === 'deleted' ? m.grid_restore_row() : state === 'new' ? m.grid_drop_row() : many ? m.grid_delete_rows() : m.grid_delete_row(),
       icon: Trash2,
       shortcut: keys(`Mod+${m.key_delete()}`),
-      danger: state !== 'deleted',
+      danger: state !== 'deleted' && !locked,
+      disabled: locked,
       run: toggleDelete,
     };
   }
 
+  function lockNote(): MenuEntry {
+    const lock = edit && !edit.readonly ? edit.lock?.() : null;
+    return !!lock && { label: lock, icon: Lock, disabled: true };
+  }
+
   function editItems(r: number, c: number): MenuEntry[] {
     if (!edit || edit.readonly) return [];
+    const lock = !!edit.lock?.();
     return [
       'separator',
-      { label: m.grid_edit_cell(), icon: Pencil, shortcut: 'F2', run: () => begin(r, c) },
-      { label: m.grid_set_null(), icon: Eraser, shortcut: m.key_delete(), run: setNull },
+      lockNote(),
+      { label: m.grid_edit_cell(), icon: Pencil, shortcut: 'F2', disabled: lock, run: () => begin(r, c) },
+      { label: m.grid_set_null(), icon: Eraser, shortcut: m.key_delete(), disabled: lock, run: setNull },
       deleteItem(r),
     ];
   }
@@ -938,6 +947,7 @@
         'separator',
         { label: m.grid_select_all(), shortcut: keys('Mod+A'), run: () => (sel = S.all(bounds)) },
         !!edit && !edit.readonly && 'separator',
+        lockNote(),
         deleteItem(s.r),
         extra.length > 0 && 'separator',
         ...extra,
@@ -1297,14 +1307,15 @@
     text-underline-offset: 3px;
   }
   .fk-go {
+    --fk: min(17px, calc(var(--g-row) - 8px));
     position: absolute;
     top: 50%;
-    right: 3px;
+    right: 5px;
     display: grid;
     place-items: center;
-    width: 17px;
-    height: 17px;
-    margin-top: -8.5px;
+    width: var(--fk);
+    height: var(--fk);
+    margin-top: calc(var(--fk) / -2);
     border-radius: 4px;
     background: var(--nd-raised);
     color: var(--nd-ink-2);
@@ -1315,7 +1326,7 @@
   }
   .td.num .fk-go {
     right: auto;
-    left: 3px;
+    left: 5px;
   }
   .td.fk:hover .fk-go,
   .td.fk.focus .fk-go {

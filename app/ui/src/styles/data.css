@@ -285,7 +285,12 @@
   color: var(--nd-ok);
 }
 .dv-msg.error {
+  display: -webkit-box;
+  line-height: 1.3;
   color: var(--nd-error);
+  white-space: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 .dv-apply {
   min-width: 108px;

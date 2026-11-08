@@ -16,7 +16,7 @@ Nella vista **Dati** una chiave esterna porta alla riga a cui punta, una riga mo
 
 Per aprirla in una **nuova scheda**, lasciando com'è quella di partenza: [[Shift+F4]], clic centrale o [[Ctrl]]+clic sulla freccia, oppure tasto destro › **Apri in una nuova scheda**. La scheda nuova prende il nome della riga, per esempio `clienti (id = 63)`. Il menu ha anche **Apri la riga collegata**.
 
-Se la chiave vale NULL non c'è niente da aprire e la barra lo dice: «Niente da aprire: cliente_id è NULL.» Con modifiche in sospeso la tabella non cambia: prima si applicano o si annullano.
+Se la chiave vale NULL non c'è niente da aprire e la barra lo dice: «Niente da aprire: cliente_id è NULL.» Con modifiche in sospeso, prima di cambiare tabella NiceDB chiede cosa farne: **Applica e continua**, **Annulla le modifiche** o **Resta qui** (anche [[Esc]]). Vale per i collegamenti, la tendina delle tabelle, l'albero e le frecce indietro e avanti.
 
 ## Tornare indietro
 Ogni passo lascia una briciola a sinistra del nome della tabella: `ordini › clienti › fatture`.
@@ -30,7 +30,7 @@ Il percorso resta con la scheda: torna se la riapri con [[Ctrl+Z]] dopo averla c
 
 ## Collegamenti della riga
 **Collegamenti**, in testata, apre un pannello a destra che segue la riga selezionata. Compare solo se la tabella ha chiavi esterne, in uscita o in entrata. [[F4]] su una colonna che non è una chiave esterna apre lo stesso pannello.
-- **Punta a**: una voce per ogni chiave esterna della tabella, con la colonna di partenza («da cliente_id») e un'anteprima della riga di destinazione. Clic per aprirla qui, l'icona a destra per aprirla in una nuova scheda.
+- **Punta a**: una voce per ogni chiave esterna della tabella, con la colonna di partenza («da cliente_id») e un'anteprima della riga di destinazione. Clic sulla voce (freccia →) per aprirla qui, nella stessa scheda; l'icona del riquadro con la freccia (↗), a destra, la apre in una nuova scheda. Passandoci sopra lo dicono anche i suggerimenti.
 - **Puntano qui**: le tabelle che hanno una chiave esterna verso questa, anche da altri schemi, con il numero di righe che richiamano la riga selezionata. Clic per aprire quelle righe filtrate.
 
 I conteggi girano in sola lettura e si fermano dopo 2 secondi; quelli non arrivati in tempo restano «—». Il pannello si allarga dal bordo sinistro e si alterna con il Registro e il pannello valore.

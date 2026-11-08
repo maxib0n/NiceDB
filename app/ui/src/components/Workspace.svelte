@@ -35,6 +35,7 @@
   import { describer } from '../lib/colinfo';
   import { txOf } from '../lib/tx.svelte';
   import TxClose from './TxClose.svelte';
+  import LeaveDialog from './LeaveDialog.svelte';
   import { paletteHost, registerCommands } from '../lib/palette.svelte';
   import { workspaceCommands } from '../lib/palette-commands';
   import { moreCommands } from '../lib/palette-more';
@@ -425,4 +426,5 @@
 {/if}
 
 <TxClose />
+<LeaveDialog />
 <ToolDialogs />

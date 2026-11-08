@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.2 (2026-11-08)
+
+- Locked production: the grid menu shows write items greyed out, with the reason.
+- A failed Apply names the constraint, table and columns (and the missing side of a foreign key).
+- Leaving a table with pending edits asks to apply, discard or stay.
+- No more slowdown when selecting text in long scripts.
+- Full version in the status bar; the foreign key arrow stays inside its cell; aligned Links icons with clearer tooltips.
+- No pointer prompt after updating: choose pointers in Settings › Appearance.
+
 ## 0.3.1 (2026-11-07)
 
 - The first start follows the system: interface language (Italian, Chinese, otherwise English) and light or dark theme.

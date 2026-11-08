@@ -1,3 +1,1 @@
-import { version } from '../../package.json';
-
-export const shortVersion = version.split('.').slice(0, 2).join('.');
+export { version } from '../../package.json';

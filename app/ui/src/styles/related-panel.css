@@ -144,6 +144,9 @@
   color: var(--nd-ink-3);
   transition: transform 0.12s ease, color 0.12s ease;
 }
+.related-go:has(.related-what) .related-arrow {
+  grid-row: 1 / 4;
+}
 .related-go:hover:not(:disabled) .related-arrow {
   color: var(--nd-accent-text);
   transform: translateX(2px);

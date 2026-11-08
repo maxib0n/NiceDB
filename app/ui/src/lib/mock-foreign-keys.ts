@@ -1,5 +1,5 @@
 import type { Browse, Page, Schema } from './api';
-import type { FkAction, ForeignKey, KeyMatch_Deserialize as KeyMatch } from './bindings';
+import type { Change_Deserialize as Change, DriverError_Serialize, FkAction, ForeignKey, KeyMatch_Deserialize as KeyMatch } from './bindings';
 
 type Cell = string | null;
 type Gen = { columns: [string, string][]; total: number; row: (i: number) => Cell[] };
@@ -47,6 +47,24 @@ const LINKS = [
   fk('listini', ['articolo_id'], 'articoli', ['id']),
   fk('promozioni', ['articolo_id', 'anno'], 'listini', ['articolo_id', 'anno']),
 ];
+
+export function fkViolation(table: string, change: Change, totals: (table: string) => number | undefined): DriverError_Serialize | null {
+  const fields = change.kind === 'update' ? change.set : change.kind === 'insert' ? change.values : [];
+  for (const [from, k] of LINKS) {
+    const f = from === table && k.columns.length === 1 ? fields.find((x) => x.column === k.columns[0]) : undefined;
+    const total = totals(k.ref_table);
+    if (!f?.value || total === undefined || Number(f.value) <= total) continue;
+    return {
+      kind: 'query',
+      message: `insert or update on table "${table}" violates foreign key constraint "${k.name}"`,
+      code: '23503',
+      detail: `Key (${k.columns[0]})=(${f.value}) is not present in table "${k.ref_table}".`,
+      hint: null,
+      offset: null,
+    };
+  }
+  return null;
+}
 
 export function withForeignKeys(schema: Schema, params: URLSearchParams): Schema {
   if (!params.has('fk')) return schema;

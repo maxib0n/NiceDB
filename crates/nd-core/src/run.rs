@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 
 use crate::guard::{Access, claim, timed};
-use crate::offsets::{byte_to_utf16, utf16_to_byte};
+use crate::offsets::{Utf16Cursor, byte_to_utf16, utf16_to_byte};
 use crate::params::{Prepared, prepare, query_key};
 use crate::session::Session;
 use crate::tx::CommitMode;
@@ -148,6 +148,7 @@ struct Job<'a> {
     sql: &'a str,
     params: &'a [Option<String>],
     index: u32,
+    span: (u32, u32),
     all_rows: bool,
 }
 
@@ -176,6 +177,7 @@ impl<'a> Job<'a> {
             sql,
             params,
             index,
+            span: plan.spans[index as usize],
             all_rows: plan.all_rows,
         }
     }
@@ -198,6 +200,7 @@ impl<'a> Job<'a> {
 struct Plan<'a> {
     text: &'a str,
     prepared: &'a [Prepared],
+    spans: &'a [(u32, u32)],
     dialect: nd_sql::Dialect,
     dry: bool,
     mode: CommitMode,
@@ -302,6 +305,7 @@ fn risks(
     statements: &[Statement],
     prepared: &[Prepared],
 ) -> Vec<RiskFound> {
+    let mut utf16 = Utf16Cursor::new(text);
     statements
         .iter()
         .zip(prepared)
@@ -310,8 +314,8 @@ fn risks(
             let sql = p.display.sql.as_str();
             nd_sql::risk(sql, dialect).map(|risk| RiskFound {
                 index: u32::try_from(i).unwrap_or(u32::MAX),
-                from: byte_to_utf16(text, st.range.start),
-                to: byte_to_utf16(text, st.range.end),
+                from: utf16.at(st.range.start),
+                to: utf16.at(st.range.end),
                 sql: sql.to_owned(),
                 risk,
                 rows: None,
@@ -320,17 +324,24 @@ fn risks(
         .collect()
 }
 
+fn spans(text: &str, statements: &[Statement]) -> Vec<(u32, u32)> {
+    let mut utf16 = Utf16Cursor::new(text);
+    statements
+        .iter()
+        .map(|st| (utf16.at(st.range.start), utf16.at(st.range.end)))
+        .collect()
+}
+
 fn statement_event(
-    text: &str,
     dialect: nd_sql::Dialect,
-    st: &Statement,
+    (from, to): (u32, u32),
     sql: &str,
     index: u32,
 ) -> RunEvent {
     RunEvent::Statement {
         index,
-        from: byte_to_utf16(text, st.range.start),
-        to: byte_to_utf16(text, st.range.end),
+        from,
+        to,
         sql: sql.to_owned(),
         unsortable: nd_sql::sortable(sql, dialect).err(),
     }
@@ -442,9 +453,11 @@ impl Core {
             },
         );
 
+        let spans = spans(text, &statements);
         let plan = Plan {
             text,
             prepared: &prepared,
+            spans: &spans,
             dialect,
             dry,
             mode: session.commit_mode(),
@@ -558,11 +571,7 @@ impl Core {
         emit: &(impl Fn(RunEvent) + Send + Sync),
     ) -> Next {
         let Plan {
-            text,
-            dialect,
-            dry,
-            mode,
-            ..
+            dialect, dry, mode, ..
         } = *plan;
         let filled = &plan.prepared[index as usize];
         let sql = filled.display.sql.as_str();
@@ -570,7 +579,12 @@ impl Core {
         let write = writes(sql, dialect);
         let fit = nd_sql::transaction_fit(sql, dialect);
         let refused = |error: DriverError| {
-            emit(statement_event(text, dialect, st, sql, index));
+            emit(statement_event(
+                dialect,
+                plan.spans[index as usize],
+                sql,
+                index,
+            ));
             emit(RunEvent::Failed {
                 index,
                 elapsed_ms: 0,
@@ -708,18 +722,19 @@ impl Core {
     ) -> std::result::Result<Option<u64>, DriverError> {
         let Job {
             text,
-            st,
+            st: _,
             shown,
             base,
             sql,
             params,
             index,
+            span,
             all_rows,
         } = job;
         let Some(dialect) = session.conn.dialect() else {
             return Err(DriverError::query("this engine does not speak SQL"));
         };
-        emit(statement_event(text, dialect, st, shown, index));
+        emit(statement_event(dialect, span, shown, index));
         let shift = sql.find(base.sql.as_str()).unwrap_or(0);
         let logged = if base.changed() { shown } else { sql };
 

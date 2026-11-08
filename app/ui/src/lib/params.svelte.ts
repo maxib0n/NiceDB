@@ -1,5 +1,5 @@
 import { api, paramFault } from './api';
-import type { Dialect, ParamSlot, ParamUse, ParamValue, RunScope } from './bindings';
+import type { Dialect, ParamSlot, ParamsFound, ParamUse, ParamValue, RunScope } from './bindings';
 import { fillEntries, fits, slotLabel, unset, valuesFor, type ParamEntry } from './params';
 
 export class TabParams {
@@ -10,6 +10,8 @@ export class TabParams {
   fault = $state.raw<{ name: string; message: string } | null>(null);
   pending: { scope: RunScope; dry: boolean } | null = null;
   seq = 0;
+  scanned: string | null = null;
+  bare = false;
 }
 
 const tabs = new Map<string, TabParams>();
@@ -61,8 +63,24 @@ export async function refreshParams(tabId: string, text: string, dialect: Dialec
   const p = paramsOf(tabId);
   const seq = ++p.seq;
   p.pending = null;
+  if (p.scanned === text && p.bare) return;
+  if (p.scanned !== text && scope.kind !== 'script') {
+    const all = await find(text, dialect, { kind: 'script' }).catch(() => null);
+    if (!all || seq !== p.seq) return;
+    p.scanned = text;
+    p.bare = all.slots.length === 0;
+    if (p.bare) return show(p, all);
+  }
   const found = await find(text, dialect, scope).catch(() => null);
   if (!found || seq !== p.seq) return;
+  if (scope.kind === 'script') {
+    p.scanned = text;
+    p.bare = found.slots.length === 0;
+  }
+  show(p, found);
+}
+
+function show(p: TabParams, found: ParamsFound) {
   fillEntries(p.entries, found.slots, found.history);
   const same = found.slots.length === p.slots.length && found.slots.every((s, i) => s.name === p.slots[i]?.name && s.label === p.slots[i]?.label && s.spots.length === p.slots[i]?.spots.length && s.spots.every((x, j) => x.from === p.slots[i]?.spots[j]?.from));
   if (!same) p.slots = found.slots;
