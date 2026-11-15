@@ -6,10 +6,11 @@ export interface ParamEntry {
   chosen: boolean;
 }
 
-export const KINDS: readonly ParamKind[] = ['text', 'number', 'date', 'boolean', 'null', 'raw'];
+export const KINDS: readonly ParamKind[] = ['text', 'number', 'date', 'uuid', 'boolean', 'null', 'raw'];
 
 const NUMBER = /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/;
 const DATE = /^\d{4}-\d{2}-\d{2}([ T][\d:.+\-Z]*)?$/;
+const UUID = /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i;
 const NAME = /^[A-Za-z_][\w$]*(\.[A-Za-z_][\w$]*)*$/;
 const TRUE = ['true', '1', 't', 'yes', 'on', 'sì', 'si', 'vero'];
 const FALSE = ['false', '0', 'f', 'no', 'off', 'falso'];
@@ -18,6 +19,7 @@ export function guessKind(value: string): ParamKind {
   const v = value.trim();
   if (NUMBER.test(v)) return 'number';
   if (DATE.test(v)) return 'date';
+  if (UUID.test(v)) return 'uuid';
   if (/^(true|false)$/i.test(v)) return 'boolean';
   return 'text';
 }
@@ -29,6 +31,8 @@ export function fits(e: Pick<ParamEntry, 'kind' | 'value'>): boolean {
       return NUMBER.test(v);
     case 'date':
       return DATE.test(v);
+    case 'uuid':
+      return UUID.test(v);
     case 'boolean':
       return TRUE.includes(v) || FALSE.includes(v);
     case 'raw':

@@ -63,6 +63,7 @@ export const commands = {
 	writeAccess: (sessionId: string) => typedError<WriteAccess_Serialize, CoreError_Serialize>(__TAURI_INVOKE("write_access", { sessionId })),
 	writesUnlock: (sessionId: string) => typedError<WriteAccess_Serialize, CoreError_Serialize>(__TAURI_INVOKE("writes_unlock", { sessionId })),
 	writesLock: (sessionId: string) => typedError<WriteAccess_Serialize, CoreError_Serialize>(__TAURI_INVOKE("writes_lock", { sessionId })),
+	writeReasonSet: (reason: string | null) => typedError<null, CoreError_Serialize>(__TAURI_INVOKE("write_reason_set", { reason })),
 	txState: (sessionId: string) => typedError<TxState_Serialize, CoreError_Serialize>(__TAURI_INVOKE("tx_state", { sessionId })),
 	txModeSet: (sessionId: string, mode: CommitMode) => typedError<TxState_Serialize, CoreError_Serialize>(__TAURI_INVOKE("tx_mode_set", { sessionId, mode })),
 	txCommit: (sessionId: string, confirm: string | null) => typedError<TxState_Serialize, CoreError_Serialize>(__TAURI_INVOKE("tx_commit", { sessionId, confirm })),
@@ -221,6 +222,7 @@ export type AuditEntry_Deserialize = {
 	rows?: number | null,
 	error?: string | null,
 	undo?: ChangeSet_Deserialize | null,
+	reason?: string | null,
 };
 
 export type AuditEntry_Serialize = {
@@ -233,6 +235,7 @@ export type AuditEntry_Serialize = {
 	rows: number | null,
 	error: string | null,
 	undo: ChangeSet_Serialize | null,
+	reason: string | null,
 };
 
 export type AutoKind = 
@@ -659,12 +662,12 @@ export type Consistency = "any" | "one" | "two" | "three" | "quorum" | "all" | "
 
 export type CoreError = CoreError_Serialize | CoreError_Deserialize;
 
-export type CoreError_Deserialize = { code: "driver"; detail: DriverError_Deserialize } | { code: "tunnel"; detail: TunnelError } | { code: "secrets"; detail: string } | { code: "no_keyring" } | { code: "store"; detail: string } | { code: "not_found"; detail: string } | { code: "single_database" } | { code: "busy" } | { code: "read_only" } | { code: "needs_confirmation" } | { code: "name_mismatch" } | { code: "risky"; detail: RiskFound_Deserialize[] } | { code: "transaction_open" } | { code: "transaction_failed" } | { code: "not_dry_runnable"; detail: {
+export type CoreError_Deserialize = { code: "driver"; detail: DriverError_Deserialize } | { code: "tunnel"; detail: TunnelError } | { code: "secrets"; detail: string } | { code: "no_keyring" } | { code: "keychain_full" } | { code: "store"; detail: string } | { code: "not_found"; detail: string } | { code: "single_database" } | { code: "busy" } | { code: "read_only" } | { code: "needs_confirmation" } | { code: "name_mismatch" } | { code: "risky"; detail: RiskFound_Deserialize[] } | { code: "transaction_open" } | { code: "transaction_failed" } | { code: "not_dry_runnable"; detail: {
 	index: number,
 	sql: string,
 } } | { code: "no_key" } | { code: "invalid_value"; detail: string } | { code: "plan_unavailable" } | { code: "unsortable"; detail: Unsortable } | { code: "package"; detail: PackageFault } | { code: "io"; detail: string } | { code: "tool"; detail: ToolFault } | { code: "init"; detail: InitFailure_Deserialize } | { code: "param"; detail: ParamError } | { code: "variable"; detail: VarError } | { code: "model" } | { code: "not_sql" } | { code: "poisoned" };
 
-export type CoreError_Serialize = { code: "driver"; detail: DriverError_Serialize } | { code: "tunnel"; detail: TunnelError } | { code: "secrets"; detail: string } | { code: "no_keyring" } | { code: "store"; detail: string } | { code: "not_found"; detail: string } | { code: "single_database" } | { code: "busy" } | { code: "read_only" } | { code: "needs_confirmation" } | { code: "name_mismatch" } | { code: "risky"; detail: RiskFound_Serialize[] } | { code: "transaction_open" } | { code: "transaction_failed" } | { code: "not_dry_runnable"; detail: {
+export type CoreError_Serialize = { code: "driver"; detail: DriverError_Serialize } | { code: "tunnel"; detail: TunnelError } | { code: "secrets"; detail: string } | { code: "no_keyring" } | { code: "keychain_full" } | { code: "store"; detail: string } | { code: "not_found"; detail: string } | { code: "single_database" } | { code: "busy" } | { code: "read_only" } | { code: "needs_confirmation" } | { code: "name_mismatch" } | { code: "risky"; detail: RiskFound_Serialize[] } | { code: "transaction_open" } | { code: "transaction_failed" } | { code: "not_dry_runnable"; detail: {
 	index: number,
 	sql: string,
 } } | { code: "no_key" } | { code: "invalid_value"; detail: string } | { code: "plan_unavailable" } | { code: "unsortable"; detail: Unsortable } | { code: "package"; detail: PackageFault } | { code: "io"; detail: string } | { code: "tool"; detail: ToolFault } | { code: "init"; detail: InitFailure_Serialize } | { code: "param"; detail: ParamError } | { code: "variable"; detail: VarError } | { code: "model" } | { code: "not_sql" } | { code: "poisoned" };
@@ -2576,6 +2579,7 @@ export type Palette = "1" | "2" | "3";
 export type ParamError = { kind: "missing"; name: string } | { kind: "invalid"; name: string; as_kind: ParamKind };
 
 export type ParamKind = "text" | "number" | "date" | "boolean" | "null" | 
+"uuid" | 
 "raw";
 
 export type ParamSlot = {
@@ -3299,6 +3303,7 @@ export type SafetyPrefs_Deserialize = {
 	unlock_minutes?: number,
 	unlock_mode?: UnlockMode,
 	confirm_mode?: ConfirmMode,
+	windows_file_secrets?: boolean,
 };
 
 export type SafetyPrefs_Serialize = {
@@ -3309,6 +3314,7 @@ export type SafetyPrefs_Serialize = {
 	unlock_minutes: number,
 	unlock_mode: UnlockMode,
 	confirm_mode: ConfirmMode,
+	windows_file_secrets: boolean,
 };
 
 export type SampleColumn = {

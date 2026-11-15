@@ -9,14 +9,14 @@ const cell = (v: string) => {
 };
 
 export function auditCsv(entries: readonly AuditEntry[]): string {
-  const head = ['at', 'who', 'database', 'rows', 'error', 'sql'];
-  const lines = entries.map((e) => [iso(e.at ?? 0), e.who, e.database, e.rows === null ? '' : String(e.rows), e.error ?? '', e.sql].map(cell).join(','));
+  const head = ['at', 'who', 'database', 'rows', 'reason', 'error', 'sql'];
+  const lines = entries.map((e) => [iso(e.at ?? 0), e.who, e.database, e.rows === null ? '' : String(e.rows), e.reason ?? '', e.error ?? '', e.sql].map(cell).join(','));
   return `${[head.join(','), ...lines].join('\r\n')}\r\n`;
 }
 
 export function auditJson(entries: readonly AuditEntry[]): string {
   return `${JSON.stringify(
-    entries.map((e) => ({ at: iso(e.at ?? 0), who: e.who, database: e.database, rows: e.rows, error: e.error, sql: e.sql })),
+    entries.map((e) => ({ at: iso(e.at ?? 0), who: e.who, database: e.database, rows: e.rows, reason: e.reason, error: e.error, sql: e.sql })),
     null,
     2,
   )}\n`;

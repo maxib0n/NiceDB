@@ -52,10 +52,14 @@ pub struct Core {
     trashed: Mutex<HashMap<String, Option<String>>>,
     dormant: Mutex<HashMap<String, upkeep::Dormant>>,
     reconnecting: tokio::sync::Mutex<()>,
+    pending_reason: Mutex<Option<String>>,
 }
 
 impl Core {
     pub fn new(store: Store, secrets: Arc<dyn SecretStore>, known_hosts: KnownHosts) -> Self {
+        if let Ok(p) = store.preferences() {
+            nd_secrets::allow_file_fallback(p.safety.windows_file_secrets);
+        }
         Self {
             store: Arc::new(Mutex::new(store)),
             secrets,
@@ -68,6 +72,7 @@ impl Core {
             trashed: Mutex::default(),
             dormant: Mutex::default(),
             reconnecting: tokio::sync::Mutex::new(()),
+            pending_reason: Mutex::default(),
         }
     }
 

@@ -2,6 +2,7 @@
   import { Droplet, TriangleAlert } from '@lucide/svelte';
   import { tick } from 'svelte';
   import { counted, touches } from '../lib/estimate';
+  import { api } from '../lib/api';
   import { confirmState } from '../lib/guard.svelte';
   import { prefs } from '../lib/prefs.svelte';
   import { confirmAnswer } from '../lib/prodsafety';
@@ -10,6 +11,7 @@
   const req = $derived(confirmState.req);
   let dialog = $state<HTMLDialogElement>();
   let typed = $state('');
+  let reason = $state('');
   let decline = $state<HTMLButtonElement>();
 
   const typing = $derived(!!req?.production && prefs.value.safety.confirm_mode === 'typed');
@@ -18,25 +20,28 @@
   $effect(() => {
     if (req && dialog && !dialog.open) {
       typed = '';
+      reason = '';
       dialog.showModal();
       if (!typing) void tick().then(() => decline?.focus());
     }
     if (!req && dialog?.open) dialog.close();
   });
 
-  function answer(ok: boolean) {
+  async function answer(ok: boolean) {
     if (!req) return;
-    req.resolve(ok ? confirmAnswer(prefs.value.safety.confirm_mode, req.production, typed) : false);
+    const r = req;
+    if (ok && r.production) await api.writeReasonSet(reason.trim() || null);
+    r.resolve(ok ? confirmAnswer(prefs.value.safety.confirm_mode, r.production, typed) : false);
   }
 </script>
 
-<dialog class="sheet-dialog confirm-write" class:prod={req?.production} bind:this={dialog} oncancel={(e) => (e.preventDefault(), answer(false))} aria-labelledby="cw-title">
+<dialog class="sheet-dialog confirm-write" class:prod={req?.production} bind:this={dialog} oncancel={(e) => (e.preventDefault(), void answer(false))} aria-labelledby="cw-title">
   {#if req}
     <form
       method="dialog"
       onsubmit={(e) => {
         e.preventDefault();
-        if (typing && matches) answer(true);
+        if (typing && matches) void answer(true);
       }}
     >
       <header class="dialog-head cw-head">
@@ -70,11 +75,17 @@
             <input bind:value={typed} autocomplete="off" spellcheck="false" aria-label={m.confirm_name()} autofocus />
           </label>
         {/if}
+        {#if req.production}
+          <label class="cw-type cw-reason">
+            <span>{m.confirm_reason()}</span>
+            <input bind:value={reason} maxlength="500" autocomplete="off" placeholder={m.confirm_reason_placeholder()} />
+          </label>
+        {/if}
       </div>
       <footer class="dialog-foot cw-foot">
         <span class="spacer"></span>
-        <button class="btn" type="button" bind:this={decline} onclick={() => answer(false)}>{m.confirm_cancel()}</button>
-        <button class="btn danger cw-go" type={typing ? 'submit' : 'button'} disabled={!matches} onclick={() => !typing && answer(true)}>
+        <button class="btn" type="button" bind:this={decline} onclick={() => void answer(false)}>{m.confirm_cancel()}</button>
+        <button class="btn danger cw-go" type={typing ? 'submit' : 'button'} disabled={!matches} onclick={() => !typing && void answer(true)}>
           {#if req.production}<Droplet size={13} strokeWidth={1.8} aria-hidden="true" />{/if}
           {req.production && !typing ? m.confirm_ok() : req.action}
         </button>

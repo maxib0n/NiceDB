@@ -86,7 +86,7 @@ pub fn run() {
             files.push(dir.join("known_hosts"));
             let core = Arc::new(Core::new(
                 store,
-                Arc::new(nd_secrets::Keychain),
+                Arc::new(nd_secrets::Keychain::new(&dir)),
                 KnownHosts { files },
             ));
             if let Some((json, sig)) = core.saved_seclab_versions() {

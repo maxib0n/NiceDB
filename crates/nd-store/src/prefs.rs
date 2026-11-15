@@ -112,6 +112,7 @@ pub struct SafetyPrefs {
     pub unlock_minutes: u32,
     pub unlock_mode: UnlockMode,
     pub confirm_mode: ConfirmMode,
+    pub windows_file_secrets: bool,
 }
 
 impl Default for SafetyPrefs {
@@ -124,6 +125,7 @@ impl Default for SafetyPrefs {
             unlock_minutes: 10,
             unlock_mode: UnlockMode::default(),
             confirm_mode: ConfirmMode::default(),
+            windows_file_secrets: false,
         }
     }
 }

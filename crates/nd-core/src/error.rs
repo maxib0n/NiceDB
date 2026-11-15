@@ -13,6 +13,8 @@ pub enum CoreError {
     Secrets(String),
     #[error("no default keyring")]
     NoKeyring,
+    #[error("keychain full")]
+    KeychainFull,
     #[error("store: {0}")]
     Store(String),
     #[error("not found: {0}")]
@@ -85,6 +87,7 @@ impl From<nd_secrets::Error> for CoreError {
     fn from(e: nd_secrets::Error) -> Self {
         match e {
             nd_secrets::Error::NoKeyring => Self::NoKeyring,
+            nd_secrets::Error::Full => Self::KeychainFull,
             e @ nd_secrets::Error::Other(_) => Self::Secrets(e.to_string()),
         }
     }

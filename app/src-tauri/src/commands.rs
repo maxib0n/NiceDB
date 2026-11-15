@@ -752,6 +752,12 @@ async fn writes_lock(core: Ctx<'_>, session_id: String) -> Res<WriteAccess> {
 
 #[tauri::command]
 #[specta::specta]
+fn write_reason_set(core: Ctx<'_>, reason: Option<String>) -> Res<()> {
+    core.set_write_reason(reason)
+}
+
+#[tauri::command]
+#[specta::specta]
 fn tx_state(core: Ctx<'_>, session_id: String) -> Res<TxState> {
     core.transaction(&session_id)
 }
@@ -847,6 +853,7 @@ fn commands() -> Builder<tauri::Wry> {
         write_access,
         writes_unlock,
         writes_lock,
+        write_reason_set,
         tx_state,
         tx_mode_set,
         tx_commit,

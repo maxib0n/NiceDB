@@ -123,6 +123,7 @@
         <li class:err={!!e.error}>
           <span class="audit-meta">{when(e.at ?? 0)} · {e.who || '—'}{#if e.database} · {e.database}{/if}{#if e.rows !== null} · {e.rows === 1 ? m.audit_row_one() : m.audit_rows({ count: num(e.rows) })}{/if}</span>
           <code>{e.sql.length > 400 ? `${e.sql.slice(0, 400)}…` : e.sql}</code>
+          {#if e.reason}<span class="audit-reason">{m.audit_reason({ reason: e.reason })}</span>{/if}
           {#if e.error}<span class="audit-err">{e.error}</span>{/if}
           {#if e.undo}
             <button class="btn ghost small audit-undo" type="button" disabled={undoing !== null} onclick={() => void undo(e)}><Undo2 size={12} strokeWidth={1.8} aria-hidden="true" />{m.audit_undo()}</button>

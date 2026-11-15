@@ -69,13 +69,14 @@ La finestra di conferma mostra:
 - il titolo, per esempio «Eseguire in produzione?» o «Registrare 3 modifiche in produzione?», e il nome della connessione;
 - le istruzioni o le modifiche che partiranno;
 - per le istruzioni rischiose, le righe che toccheranno («tocca 1.240 righe»), quando si possono stimare;
-- un avviso se nel frattempo qualcuno ha cambiato le righe che stai per modificare.
+- un avviso se nel frattempo qualcuno ha cambiato le righe che stai per modificare;
+- il campo **Motivo (facoltativo)**: quello che scrivi, per esempio il numero del ticket, finisce nel registro accanto a ogni istruzione di quella scrittura.
 
 [[Esc]] equivale ad **Annulla**. Per provare una scrittura senza confermarla usa la prova a secco: vedi [Transazioni e prova a secco](transactions).
 
 ## Istruzioni rischiose
 Chiedono conferma anche fuori dalla produzione, con la finestra «Eseguire statement rischiosi?» e il pulsante **Esegui comunque**:
-- `UPDATE` o `DELETE` senza `WHERE`, `DROP`, `TRUNCATE`, `ALTER`;
+- `UPDATE` o `DELETE` senza `WHERE` o con un `WHERE` sempre vero (`WHERE 1=1`, `x = x`, `OR 1=1`), `DROP`, `TRUNCATE`, `ALTER`;
 - MongoDB: `delete` o `update` su tutti i documenti, `drop`, `dropDatabase`, `dropIndexes`, `collMod`, `renameCollection`;
 - Redis: `FLUSHDB`, `FLUSHALL`, `KEYS`, `CONFIG SET`, `SHUTDOWN`, `CLIENT KILL` e simili;
 - ClickHouse: `DROP`, `TRUNCATE`, `ALTER` comprese le mutazioni.
@@ -97,7 +98,7 @@ Valori possibili: Nessun limite, 15 s, 30 s, 1 min, 5 min, 15 min, 1 h.
 ## Registro delle scritture
 Il registro lo tiene NiceDB sul tuo computer: contiene solo le scritture partite da NiceDB. Quelle fatte con altri programmi (psql, un altro client, un'applicazione) qui non compaiono. Per sapere tutto quello che arriva al database serve l'audit del database stesso, per esempio pgaudit su PostgreSQL.
 
-Ogni scrittura fatta da NiceDB, su qualsiasi connessione, viene annotata: quando, utente del sistema, database, righe toccate, testo inviato ed eventuale errore. Vale per editor, vista Dati (anche un filtro che scrive), documenti, chiavi, `COMMIT` di una transazione con scritture, sessioni fermate e ripristini. In produzione si annotano anche sblocco e blocco della scrittura, il cambio di ambiente e l'allentamento delle impostazioni di sicurezza.
+Ogni scrittura fatta da NiceDB, su qualsiasi connessione, viene annotata: quando, utente del sistema, database, righe toccate, testo inviato, motivo dato alla conferma ed eventuale errore. Vale per editor, vista Dati (anche un filtro che scrive), documenti, chiavi, `COMMIT` di una transazione con scritture, sessioni fermate e ripristini. In produzione si annotano anche sblocco e blocco della scrittura, il cambio di ambiente e l'allentamento delle impostazioni di sicurezza.
 
 Le password scritte nello SQL (`PASSWORD '…'`, `IDENTIFIED BY …`, `AUTH` di Redis, `pwd` di MongoDB e simili) diventano `***` sia nel registro sia nella cronologia.
 

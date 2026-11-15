@@ -107,9 +107,17 @@ export function dataMock(tables: Record<string, Gen>, profile: (sessionId: strin
     return { guarded, open, mode, open_ms: open && mode === 'timed' && until > Date.now() ? until - Date.now() : null };
   };
 
+  let pendingReason: string | null | undefined;
+  const reasons = new Map<string, string>();
+
   function admit(sessionId: string, confirm: string | null | undefined) {
     const p = profile(sessionId);
     if (p?.environment !== 'production') return;
+    if (pendingReason !== undefined) {
+      if (pendingReason) reasons.set(sessionId, pendingReason);
+      else reasons.delete(sessionId);
+      pendingReason = undefined;
+    } else if (confirm == null) reasons.delete(sessionId);
     const code = gate(readPrefs().safety.confirm_mode, access(sessionId).open, p.name, confirm);
     if (code) throw new ApiError({ code });
   }
@@ -117,7 +125,7 @@ export function dataMock(tables: Record<string, Gen>, profile: (sessionId: strin
   function log(sessionId: string, sql: string, rows: number | null, error: string | null, undo: AuditEntry["undo"] = null) {
     const p = profile(sessionId);
     const server = p ? mockServer(p.target).database : 'gestionale';
-    audit.unshift({ id: audit.length + 1, connection_id: p?.id ?? sessionId, database: sessionId.includes('@') ? sessionId.split('@')[1] ?? '' : server, at: Date.now(), who: 'ada', sql, rows, error, undo });
+    audit.unshift({ id: audit.length + 1, connection_id: p?.id ?? sessionId, database: sessionId.includes('@') ? sessionId.split('@')[1] ?? '' : server, at: Date.now(), who: 'ada', sql, rows, error, undo, reason: reasons.get(sessionId) ?? null });
   }
 
   const inverse = (set: ChangeSet): AuditEntry["undo"] => ({
@@ -251,6 +259,10 @@ export function dataMock(tables: Record<string, Gen>, profile: (sessionId: strin
     writesUnlock: async (sessionId: string) => {
       if (access(sessionId).guarded) unlocked.set(sessionId, Date.now() + (readPrefs().safety.unlock_mode === 'timed' ? unlockMs() : 10 * 365 * 86_400_000));
       return access(sessionId);
+    },
+    writeReasonSet: async (reason: string | null) => {
+      pendingReason = reason?.trim().slice(0, 500) ?? null;
+      return null;
     },
     writesLock: async (sessionId: string) => {
       if (busy.has(sessionId)) throw new ApiError({ code: 'busy' });

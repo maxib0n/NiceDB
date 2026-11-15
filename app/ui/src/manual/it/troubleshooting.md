@@ -45,7 +45,7 @@ Per non riconnettere in automatico togli **Riconnetti da sola se la connessione 
 NiceDB non salva le password nei suoi file: le tiene nel portachiavi del sistema, con il nome di servizio `app.nicedb.desktop`.
 - **Linux**: serve un servizio Secret Service attivo e sbloccato (GNOME Portachiavi, KWallet o simili). Le password vanno nel portachiavi predefinito; se manca, NiceDB usa quello `login`. Se non c'è nessuno dei due, il salvataggio dice «Manca un portachiavi predefinito»: creane uno con Seahorse (GNOME Keyring) o KWallet, rendilo predefinito e salva di nuovo.
 - **macOS**: il Portachiavi di sistema.
-- **Windows**: Gestione credenziali.
+- **Windows**: Gestione credenziali. Se il salvataggio dice «Gestione credenziali di Windows è pieno», l'archivio ha raggiunto il suo limite, di solito per le voci lasciate da altri programmi: togli quelle che non servono in Pannello di controllo › Gestione credenziali › Credenziali di Windows (o con `cmdkey /list` e `cmdkey /delete:<nome>`), poi salva di nuovo. Oppure premi **Usa un file cifrato e salva**: da lì in poi le password che Windows rifiuta vanno in `secrets.dpapi.json` nella cartella dei dati, cifrate con DPAPI per il tuo account Windows; solo quell'account su quel PC può leggerle. L'interruttore è in Impostazioni › Sicurezza, **File cifrato se Gestione credenziali è pieno**, spento di serie.
 
 Un errore che inizia con `keychain:` viene dal portachiavi: sbloccalo o avvia il servizio, poi riprova. Se una password non si trova più, riscrivila nel form e **Salva**. **Togli la password salvata** la cancella dal portachiavi.
 

@@ -7,7 +7,7 @@
   import { DRIVERS, PRESETS, defaultPort, defaultTls, dialectOf, hasTls, isFlavor, isLocalHost, isNetwork, isNetworkDriver, needsTls, splitChoice, takesClientCert, type ChoiceId, type DriverId } from '../lib/drivers';
   import { parseConnectionUrl } from '../lib/connurl';
   import { num } from '../lib/format';
-  import { prefs } from '../lib/prefs.svelte';
+  import { prefs, updateSection } from '../lib/prefs.svelte';
   import { blankHop, fill, formOf, jumpSecrets, MAX_JUMPS, portOk, sessionOf, targetOf, type HopForm } from '../lib/profile-form';
   import { followersOf, isModel, overridesOf } from '../lib/profile-template';
   import { IDLE_CHOICES, INIT_EXAMPLE, KEEPALIVE_CHOICES, sessionSummary, wholeNumber } from '../lib/session';
@@ -73,6 +73,7 @@
 
   let busy = $state<'test' | 'save' | null>(null);
   let result = $state<{ ok: boolean; text: string } | null>(null);
+  let keychainFull = $state(false);
   let hostKey = $state<Extract<TunnelError, { kind: 'host_key_unknown' }> | null>(null);
   let confirmDelete = $state(untrack(() => askDelete) && initial !== null);
   let showErrors = $state(false);
@@ -252,10 +253,17 @@
       if (!editing) await keepInSpace(saved);
       close();
     } catch (e) {
+      keychainFull = e instanceof ApiError && e.error.code === 'keychain_full';
       result = { ok: false, text: explain(e) ?? '' };
     } finally {
       busy = null;
     }
+  }
+
+  async function useSealedFile() {
+    keychainFull = false;
+    await updateSection('safety', { windows_file_secrets: true });
+    await save();
   }
 
   async function remove() {
@@ -859,6 +867,13 @@
             <p>{m.hostkey_body({ host: hostKey.host })}</p>
             <code>{hostKey.fingerprint}</code>
             <button class="btn" type="button" onclick={() => void trust()}>{m.hostkey_trust()}</button>
+          </div>
+        {/if}
+        {#if keychainFull}
+          <div class="hostkey" role="alert">
+            <strong>{m.keychain_full_title()}</strong>
+            <p>{m.keychain_full_body()}</p>
+            <button class="btn" type="button" disabled={busy !== null} onclick={() => void useSealedFile()}>{m.keychain_full_use_file()}</button>
           </div>
         {/if}
       </div>

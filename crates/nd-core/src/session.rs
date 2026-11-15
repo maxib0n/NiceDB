@@ -11,7 +11,7 @@ use nd_store::{ConnectionProfile, Environment, SessionOptions, Template, UnlockM
 use serde::{Deserialize, Serialize};
 use zeroize::Zeroizing;
 
-use crate::guard::quiet;
+use crate::guard::{Trail, quiet};
 use crate::tx::CommitMode;
 use crate::{Core, CoreError, Result};
 
@@ -120,6 +120,7 @@ pub(crate) struct Session {
     pub lost: AtomicBool,
     pub tx_lost: AtomicBool,
     pub retry: Mutex<(Instant, Duration)>,
+    pub reason: Mutex<Option<String>>,
 }
 
 pub(crate) const RETRY_FIRST: Duration = Duration::from_secs(5);
@@ -515,7 +516,14 @@ impl Core {
         let lowered = self.admit_environment(profile, confirm)?;
         self.store(|s| s.save_connection(profile))?;
         if let Some(line) = lowered {
-            self.audit_as(&profile.id, String::new(), &line, None, None, None);
+            self.audit_as(
+                &profile.id,
+                String::new(),
+                &line,
+                None,
+                None,
+                Trail::default(),
+            );
         }
         for session in Self::lock(&self.sessions)?
             .values()
@@ -578,7 +586,14 @@ impl Core {
         let lowered = self.admit_environment(profile, confirm)?;
         self.store(|s| s.save_connection(profile))?;
         if let Some(line) = lowered {
-            self.audit_as(&profile.id, String::new(), &line, None, None, None);
+            self.audit_as(
+                &profile.id,
+                String::new(),
+                &line,
+                None,
+                None,
+                Trail::default(),
+            );
         }
         Self::lock(&self.trashed)?.remove(&profile.id);
         Ok(())
@@ -797,6 +812,7 @@ impl Core {
             last_ping: Mutex::new(Instant::now()),
             lost: AtomicBool::new(false),
             retry: Mutex::new((Instant::now(), RETRY_FIRST)),
+            reason: Mutex::new(None),
         };
         Self::lock(&self.sessions)?.insert(info.session_id.clone(), Arc::new(session));
         Ok(info)

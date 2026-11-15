@@ -390,6 +390,10 @@
   font-size: 11px;
   color: var(--nd-ink-3);
 }
+.audit-reason {
+  font-size: 11.5px;
+  color: var(--nd-ink-2);
+}
 .audit-err {
   font-size: 11.5px;
   color: var(--nd-error);
@@ -569,6 +573,9 @@
 }
 .cw-type input:focus {
   border-bottom-color: var(--nd-prod);
+}
+.cw-reason input {
+  font: 400 14px var(--nd-font-ui);
 }
 .cw-go svg {
   flex: none;

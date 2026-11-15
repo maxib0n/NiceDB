@@ -19,12 +19,14 @@ pub struct AuditEntry {
     pub error: Option<String>,
     #[serde(default)]
     pub undo: Option<nd_sql::ChangeSet>,
+    #[serde(default)]
+    pub reason: Option<String>,
 }
 
 impl Store {
     pub fn add_audit(&self, e: &AuditEntry) -> Result<i64> {
         self.conn.execute(
-            "INSERT INTO audit (connection_id, database, at, who, sql, rows, error, undo) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+            "INSERT INTO audit (connection_id, database, at, who, sql, rows, error, undo, reason) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
             params![
                 e.connection_id,
                 e.database,
@@ -33,7 +35,8 @@ impl Store {
                 e.sql,
                 e.rows,
                 e.error,
-                e.undo.as_ref().map(serde_json::to_string).transpose()?
+                e.undo.as_ref().map(serde_json::to_string).transpose()?,
+                e.reason
             ],
         )?;
         Ok(self.conn.last_insert_rowid())
@@ -41,7 +44,7 @@ impl Store {
 
     pub fn audit(&self, connection_id: &str, limit: u32) -> Result<Vec<AuditEntry>> {
         let mut stmt = self.conn.prepare_cached(
-            "SELECT id, connection_id, database, at, who, sql, rows, error, undo FROM audit
+            "SELECT id, connection_id, database, at, who, sql, rows, error, undo, reason FROM audit
              WHERE connection_id = ?1 ORDER BY at DESC, id DESC LIMIT ?2",
         )?;
         stmt.query_map(params![connection_id, limit], |r| {
@@ -57,6 +60,7 @@ impl Store {
                 undo: r
                     .get::<_, Option<String>>(8)?
                     .and_then(|u| serde_json::from_str(&u).ok()),
+                reason: r.get(9)?,
             })
         })?
         .collect::<rusqlite::Result<_>>()

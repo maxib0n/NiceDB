@@ -29,6 +29,7 @@ pub enum ParamKind {
     Date,
     Boolean,
     Null,
+    Uuid,
     Raw,
 }
 
@@ -425,7 +426,11 @@ pub fn bind(
     for (range, value) in slots {
         out.push_str(&sql[last..range.start]);
         let start = out.len();
-        let piece = if native && matches!(value.kind, ParamKind::Text | ParamKind::Date) {
+        let piece = if native
+            && matches!(
+                value.kind,
+                ParamKind::Text | ParamKind::Date | ParamKind::Uuid
+            ) {
             checked(value, dialect)?;
             native_marker(dialect, value, &mut params, &mut numbered)
         } else {
@@ -474,6 +479,7 @@ fn checked(value: &ParamValue, _dialect: Dialect) -> Result<(), ParamError> {
         ParamKind::Text | ParamKind::Null => true,
         ParamKind::Number => is_number(v),
         ParamKind::Date => is_date(v),
+        ParamKind::Uuid => is_uuid(v),
         ParamKind::Boolean => boolean(v).is_some(),
         ParamKind::Raw => is_name(v),
     };
@@ -485,7 +491,7 @@ pub fn literal(value: &ParamValue, dialect: Dialect) -> Result<String, ParamErro
     let v = value.value.trim();
     Ok(match value.kind {
         ParamKind::Text => crate::quote::string(dialect, &value.value),
-        ParamKind::Date => crate::quote::string(dialect, v),
+        ParamKind::Date | ParamKind::Uuid => crate::quote::string(dialect, v),
         ParamKind::Null => "NULL".into(),
         ParamKind::Number if v.starts_with('-') => format!("({v})"),
         ParamKind::Number | ParamKind::Raw => v.to_owned(),
@@ -519,6 +525,17 @@ fn is_number(v: &str) -> bool {
         !e.is_empty() && digits(e)
     });
     mantissa_ok && exponent_ok
+}
+
+fn is_uuid(v: &str) -> bool {
+    v.len() == 36
+        && v.bytes().enumerate().all(|(i, c)| {
+            if matches!(i, 8 | 13 | 18 | 23) {
+                c == b'-'
+            } else {
+                c.is_ascii_hexdigit()
+            }
+        })
 }
 
 fn is_date(v: &str) -> bool {

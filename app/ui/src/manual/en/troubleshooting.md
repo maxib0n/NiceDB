@@ -45,7 +45,7 @@ To stop automatic reconnects, clear **Reconnect on its own when the connection d
 NiceDB does not store passwords in its own files: it keeps them in the system keychain, under the service name `app.nicedb.desktop`.
 - **Linux**: a running, unlocked Secret Service (GNOME Keyring, KWallet or similar). Passwords go into its default keyring; without one NiceDB uses the `login` keyring. If there is neither, saving says “No default keyring”: create a keyring in Seahorse (GNOME Keyring) or KWallet, make it the default, then save again.
 - **macOS**: the system Keychain.
-- **Windows**: Credential Manager.
+- **Windows**: Credential Manager. If saving says “Windows Credential Manager is full”, the vault has reached its size limit, usually because of entries left by other programs: remove the ones you no longer need in Control Panel › Credential Manager › Windows Credentials (or with `cmdkey /list` and `cmdkey /delete:<name>`), then save again. Or press **Use an encrypted file and save**: from then on, passwords Windows refuses go into `secrets.dpapi.json` in the data folder, encrypted with DPAPI for your Windows account; only that account on that PC can read them. The switch is in Settings › Security, **Encrypted file when Credential Manager is full**, off by default.
 
 An error starting with `keychain:` comes from the keychain: unlock it or start the service, then try again. If a password can no longer be found, type it again in the form and **Save**. **Remove the saved password** deletes it from the keychain.
 

@@ -69,13 +69,14 @@ The confirmation dialog shows:
 - the title, for example “Run on production?” or “Apply 3 changes to production?”, and the connection name;
 - the statements or changes about to run;
 - for risky statements, the rows they will touch (“touches 1,240 rows”) when they can be estimated;
-- a warning if someone changed the rows you are about to edit in the meantime.
+- a warning if someone changed the rows you are about to edit in the meantime;
+- the **Reason (optional)** field: what you write, for example a ticket number, goes into the write log next to every statement of that write.
 
 [[Esc]] is the same as **Cancel**. To try a write without committing it, use a dry run: see [Transactions and dry run](transactions).
 
 ## Risky statements
 They ask for confirmation outside production too, with the “Run risky statements?” dialog and the **Run anyway** button:
-- `UPDATE` or `DELETE` without `WHERE`, `DROP`, `TRUNCATE`, `ALTER`;
+- `UPDATE` or `DELETE` without `WHERE` or with a `WHERE` that is always true (`WHERE 1=1`, `x = x`, `OR 1=1`), `DROP`, `TRUNCATE`, `ALTER`;
 - MongoDB: `delete` or `update` on every document, `drop`, `dropDatabase`, `dropIndexes`, `collMod`, `renameCollection`;
 - Redis: `FLUSHDB`, `FLUSHALL`, `KEYS`, `CONFIG SET`, `SHUTDOWN`, `CLIENT KILL` and the like;
 - ClickHouse: `DROP`, `TRUNCATE`, `ALTER` including mutations.
@@ -97,7 +98,7 @@ Choices: No limit, 15 s, 30 s, 1 min, 5 min, 15 min, 1 h.
 ## Write log
 NiceDB keeps this log on your computer: it holds only the writes NiceDB sent. Writes made with other tools (psql, another client, an application) do not appear here. To see everything that reaches the database, use the database's own audit, for example pgaudit on PostgreSQL.
 
-Every write NiceDB makes, on any connection, is recorded: when, system user, database, rows touched, the text sent and any error. It covers the editor, Data view (a filter that writes too), documents, keys, the `COMMIT` of a transaction that wrote, cancelled server sessions and restores. On production, unlocking and locking writes, changing the environment and loosening the safety settings are recorded as well.
+Every write NiceDB makes, on any connection, is recorded: when, system user, database, rows touched, the text sent, the reason given at the confirmation and any error. It covers the editor, Data view (a filter that writes too), documents, keys, the `COMMIT` of a transaction that wrote, cancelled server sessions and restores. On production, unlocking and locking writes, changing the environment and loosening the safety settings are recorded as well.
 
 Passwords written in SQL (`PASSWORD '…'`, `IDENTIFIED BY …`, Redis `AUTH`, MongoDB `pwd` and the like) become `***` in both the log and the history.
 

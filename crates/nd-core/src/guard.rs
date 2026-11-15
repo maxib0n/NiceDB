@@ -14,6 +14,13 @@ use crate::session::Session;
 use crate::{Core, CoreError, Result};
 
 pub const UNLOCK_FOR: Duration = Duration::from_mins(10);
+const MAX_REASON: usize = 500;
+
+#[derive(Default)]
+pub(crate) struct Trail {
+    pub undo: Option<nd_sql::ChangeSet>,
+    pub reason: Option<String>,
+}
 pub(crate) const UNTIMED_FOR: Duration = Duration::from_hours(24 * 365 * 10);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, specta::Type)]
@@ -235,6 +242,14 @@ impl Core {
             Access::Held => return Err(CoreError::ReadOnly),
             Access::Write { confirm } => confirm,
         };
+        let given = Self::lock(&self.pending_reason)?.take();
+        let mut reason = session.reason.lock().map_err(|_| CoreError::Poisoned)?;
+        match (given, confirm) {
+            (Some(r), _) => *reason = (!r.is_empty()).then_some(r),
+            (None, None) => *reason = None,
+            (None, Some(_)) => {}
+        }
+        drop(reason);
         if !self.access_of(session)?.open {
             return Err(CoreError::ReadOnly);
         }
@@ -249,7 +264,16 @@ impl Core {
         }
     }
 
+    pub fn set_write_reason(&self, reason: Option<String>) -> Result<()> {
+        let reason = reason
+            .map(|r| r.trim().chars().take(MAX_REASON).collect::<String>())
+            .unwrap_or_default();
+        *Self::lock(&self.pending_reason)? = Some(reason);
+        Ok(())
+    }
+
     pub(crate) fn confirmed(&self, name: &str, confirm: Option<&str>) -> Result<()> {
+        Self::lock(&self.pending_reason)?.take();
         match (self.preferences().safety.confirm_mode, confirm) {
             (ConfirmMode::None, _) => Ok(()),
             (_, None) => Err(CoreError::NeedsConfirmation),
@@ -295,6 +319,7 @@ impl Core {
             return Err(CoreError::NeedsConfirmation);
         }
         let saved = self.store(|s| s.set_preferences(value))?;
+        nd_secrets::allow_file_fallback(saved.safety.windows_file_secrets);
         if looser {
             let line = format!(
                 "-- production safety: unlock {:?} -> {:?}, confirm {:?} -> {:?}",
@@ -307,7 +332,7 @@ impl Core {
                 .filter(|c| c.environment == Environment::Production)
                 .map(|c| c.id);
             for id in ids {
-                self.audit_as(&id, String::new(), &line, None, None, None);
+                self.audit_as(&id, String::new(), &line, None, None, Trail::default());
             }
         }
         Ok(saved)
@@ -338,6 +363,7 @@ impl Core {
                 self.finish(&session, false).await?;
             }
             session.set_locked_for(false, open_for).await?;
+            *session.reason.lock().map_err(|_| CoreError::Poisoned)? = None;
             self.audit(&session, "-- writes unlocked", None, None);
         }
         self.access_of(&session)
@@ -360,6 +386,7 @@ impl Core {
         if session.guarded() && self.preferences().safety.unlock_mode != UnlockMode::Open {
             let _busy = claim(&session)?;
             session.set_locked(true).await?;
+            *session.reason.lock().map_err(|_| CoreError::Poisoned)? = None;
             self.audit(&session, "-- writes locked", None, None);
         }
         self.access_of(&session)
@@ -383,13 +410,14 @@ impl Core {
         error: Option<String>,
         undo: Option<nd_sql::ChangeSet>,
     ) {
+        let reason = session.reason.lock().ok().and_then(|r| r.clone());
         self.audit_as(
             &session.connection_id,
             session.conn.server().database.clone(),
             sql,
             rows,
             error,
-            undo,
+            Trail { undo, reason },
         );
     }
 
@@ -414,7 +442,7 @@ impl Core {
         sql: &str,
         rows: Option<u64>,
         error: Option<String>,
-        undo: Option<nd_sql::ChangeSet>,
+        trail: Trail,
     ) {
         let entry = AuditEntry {
             id: 0,
@@ -425,7 +453,8 @@ impl Core {
             sql: nd_sql::redact_secrets(sql, self.dialect_of(connection_id)).into_owned(),
             rows: rows.and_then(|r| i64::try_from(r).ok()),
             error,
-            undo,
+            undo: trail.undo,
+            reason: trail.reason,
         };
         if let Err(e) = self.store(|s| s.add_audit(&entry)) {
             tracing::warn!(error = %e, "audit entry not recorded");

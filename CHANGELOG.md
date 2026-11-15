@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.3 (2026-11-15)
+
+- Windows: a full Credential Manager ("Windows error code 8") is explained, with an optional DPAPI-encrypted file for passwords (Settings › Security).
+- russh 0.65.1, fixing GHSA-9264-jvgf-6w2f and GHSA-736f-c93q-9fwx.
+- UPDATE and DELETE with an always-true WHERE (`1=1`, `x = x`, `OR 1=1`) ask for confirmation like those without WHERE.
+- The production confirmation has an optional Reason field, kept in the write log.
+- Query parameters have a UUID type that checks the format before running.
+
 ## 0.3.2 (2026-11-08)
 
 - Locked production: the grid menu shows write items greyed out, with the reason.

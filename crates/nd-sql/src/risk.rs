@@ -26,6 +26,10 @@ fn quoted(sql: &str, open: usize, end: usize, close: u8) -> &str {
 }
 
 pub(crate) fn words(sql: &str, dialect: Dialect, idents: bool) -> Vec<(String, usize)> {
+    scan(sql, dialect, idents, false)
+}
+
+fn scan(sql: &str, dialect: Dialect, idents: bool, values: bool) -> Vec<(String, usize)> {
     let b = sql.as_bytes();
     let mut out = Vec::new();
     let mut depth = 0usize;
@@ -56,6 +60,8 @@ pub(crate) fn words(sql: &str, dialect: Dialect, idents: bool) -> Vec<(String, u
                 let ident = c == b'`' || (c == b'"' && dialect.double_quotes_name());
                 if idents && ident {
                     out.push((quoted(sql, i, end, c).to_ascii_uppercase(), depth));
+                } else if values {
+                    out.push((sql[i..end].to_owned(), depth));
                 }
                 i = end;
             }
@@ -96,6 +102,21 @@ pub(crate) fn words(sql: &str, dialect: Dialect, idents: bool) -> Vec<(String, u
                 out.push((sql[i..end].to_ascii_uppercase(), depth));
                 i = end;
             }
+            b'0'..=b'9' | b'<' | b'>' | b'=' | b'!' if values => {
+                let digit = c.is_ascii_digit();
+                let end = b[i..]
+                    .iter()
+                    .position(|x| {
+                        if digit {
+                            !(x.is_ascii_alphanumeric() || *x == b'.')
+                        } else {
+                            !matches!(x, b'<' | b'>' | b'=' | b'!')
+                        }
+                    })
+                    .map_or(b.len(), |p| i + p);
+                out.push((sql[i..end].to_owned(), depth));
+                i = end;
+            }
             _ => i += 1,
         }
     }
@@ -120,6 +141,23 @@ fn top_level(words: &[(String, usize)], word: &str) -> bool {
     words.iter().any(|(w, d)| *d == 0 && w == word)
 }
 
+fn tautology(conjunct: &[&(String, usize)], depth: usize) -> bool {
+    conjunct
+        .split(|(w, d)| *d == depth && w == "AND")
+        .all(|atom| match atom {
+            [(a, _)] => a == "TRUE" || a == "1",
+            [(a, _), (op, _), (b, _)] => op == "=" && a == b,
+            _ => false,
+        })
+}
+
+fn always_true(clause: &[(String, usize)], depth: usize) -> bool {
+    let tokens: Vec<_> = clause.iter().collect();
+    tokens
+        .split(|(w, d)| *d == depth && w == "OR")
+        .any(|branch| !branch.is_empty() && tautology(branch, depth))
+}
+
 fn unbounded_write(w: &[(String, usize)]) -> Option<Risk> {
     for (i, (word, depth)) in w.iter().enumerate() {
         let risk = match word.as_str() {
@@ -134,10 +172,25 @@ fn unbounded_write(w: &[(String, usize)]) -> Option<Risk> {
         if matches!(prev, Some("FOR" | "ON" | "DO" | "KEY" | "GRANT" | "REVOKE")) {
             continue;
         }
-        let bounded = w[i + 1..]
+        let rest: Vec<_> = w[i + 1..]
             .iter()
             .take_while(|(_, d)| d >= depth)
-            .any(|(x, d)| d == depth && x == "WHERE");
+            .cloned()
+            .collect();
+        let bounded = rest
+            .iter()
+            .position(|(x, d)| d == depth && x == "WHERE")
+            .is_some_and(|at| {
+                let clause: Vec<_> = rest[at + 1..]
+                    .iter()
+                    .take_while(|(x, d)| {
+                        !(d == depth
+                            && matches!(x.as_str(), "RETURNING" | "ORDER" | "LIMIT" | "OPTION"))
+                    })
+                    .cloned()
+                    .collect();
+                !always_true(&clause, *depth)
+            });
         if !bounded {
             return Some(risk);
         }
@@ -146,7 +199,7 @@ fn unbounded_write(w: &[(String, usize)]) -> Option<Risk> {
 }
 
 pub fn risk(sql: &str, dialect: Dialect) -> Option<Risk> {
-    let w = words(sql, dialect, false);
+    let w = scan(sql, dialect, false, true);
     match verb(&w)? {
         "UPDATE" | "DELETE" | "WITH" | "SELECT" | "INSERT" => unbounded_write(&w),
         "EXPLAIN" if w.iter().any(|(x, _)| x == "ANALYZE") => unbounded_write(&w),

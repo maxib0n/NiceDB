@@ -242,7 +242,7 @@ export function paramFault(e: ParamError, label?: string): string {
 }
 
 export function paramKindLabel(kind: ParamKind): string {
-  return { text: m.params_kind_text, number: m.params_kind_number, date: m.params_kind_date, boolean: m.params_kind_boolean, null: m.params_kind_null, raw: m.params_kind_raw }[kind]();
+  return { text: m.params_kind_text, number: m.params_kind_number, date: m.params_kind_date, uuid: m.params_kind_uuid, boolean: m.params_kind_boolean, null: m.params_kind_null, raw: m.params_kind_raw }[kind]();
 }
 
 export function describe(e: CoreError): string {
@@ -289,6 +289,8 @@ export function describe(e: CoreError): string {
       return m.err_model();
     case 'no_keyring':
       return m.err_no_keyring();
+    case 'keychain_full':
+      return m.err_keychain_full();
     case 'io':
     case 'secrets':
     case 'store':
@@ -414,6 +416,7 @@ const real = {
   writeAccess: (sessionId: string) => unwrap(commands.writeAccess(sessionId)),
   writesUnlock: (sessionId: string) => unwrap(commands.writesUnlock(sessionId)),
   writesLock: (sessionId: string) => unwrap(commands.writesLock(sessionId)),
+  writeReasonSet: (reason: string | null) => unwrap(commands.writeReasonSet(reason)),
   auditList: (connectionId: string, limit: number) => unwrap(commands.auditList(connectionId, limit)),
   txState: (sessionId: string) => unwrap(commands.txState(sessionId)),
   txModeSet: (sessionId: string, mode: CommitMode) => unwrap(commands.txModeSet(sessionId, mode)),

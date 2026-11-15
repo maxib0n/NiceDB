@@ -14,6 +14,7 @@
 
   let { section }: { section: 'editor' | 'results' | 'safety' | 'keys' | 'drivers' } = $props();
   import Select from './Select.svelte';
+  import { frame } from '../lib/window-frame.svelte';
 
   const editor = $derived(prefs.value.editor);
   const results = $derived(prefs.value.results);
@@ -288,6 +289,21 @@
       <Select id="pref-unlock" class="pref-select" disabled={safety.unlock_mode !== 'timed'} value={safety.unlock_minutes} onchange={(v) => patch('safety', { unlock_minutes: v })} options={[...new Set<number>([...UNLOCKS, safety.unlock_minutes])].sort((a, b) => a - b).map((u) => ({ value: u, label: m.settings_minutes({ count: u }) }))} />
     </div>
     <p class="hint">{m.settings_unlock_hint()}</p>
+    {#if frame.kind === 'windows'}
+      <div class="setting row">
+        <h3 class="caps">{m.settings_windows_file_secrets()}</h3>
+        <Segmented
+          label={m.settings_windows_file_secrets()}
+          value={safety.windows_file_secrets ? 'on' : 'off'}
+          options={[
+            { value: 'on', label: m.settings_sounds_on() },
+            { value: 'off', label: m.settings_sounds_off() },
+          ]}
+          onchange={(v) => patch('safety', { windows_file_secrets: v === 'on' })}
+        />
+      </div>
+      <p class="hint">{m.settings_windows_file_secrets_hint()}</p>
+    {/if}
     <fieldset class="choices" id="pref-confirm-mode">
       <legend class="caps">{m.settings_confirm_mode()}</legend>
       <p class="hint">{m.settings_confirm_mode_hint()}</p>

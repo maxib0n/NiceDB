@@ -83,7 +83,7 @@ pub fn open_core() -> Result<Core, String> {
     files.push(dir.join("known_hosts"));
     Ok(Core::new(
         store,
-        Arc::new(nd_secrets::Keychain),
+        Arc::new(nd_secrets::Keychain::new(&dir)),
         KnownHosts { files },
     ))
 }
